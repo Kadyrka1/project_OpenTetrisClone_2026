@@ -1,44 +1,88 @@
-# project_OpenTetrisClone_2026
 
-Description:
+# 🎮 Tetris Arcade – LED Matrix Implementation
 
+A standalone hardware-based implementation of the classic Tetris game, designed and developed as an educational embedded systems project.
 
-This project is a standalone arcade implementation of the classic Tetris game, developed for learning and hardware integration purposes.
+This project recreates the traditional 10 × 20 Tetris board using a physical LED strip matrix and is intended to function as a complete arcade-style system.
 
-The game is designed to run on a physical LED matrix display composed of a 10 × 20 LED strip arrangement, replicating the traditional Tetris board dimensions. The goal is to create a fully functional arcade-style system using programmable LED strips as the visual output.
+Developed in 2026 at Creapolis, Coburg, Germany.
 
-Developed in Creapolis, Coburg, Germany (2026).
+---
 
-This project is intended strictly for educational and experimental purposes.
+## 📌 Project Overview
 
+This project focuses on combining software game logic with hardware control systems.
+The goal is to build a fully functional Tetris arcade system using programmable LED strips arranged into a 10 × 20 matrix display.
 
+The system is designed to:
+
+* Replicate classic Tetris gameplay mechanics
+* Control a physical LED matrix in real time
+* Operate as a standalone arcade unit
+* Serve as a learning platform for embedded programming and hardware integration
+
+This is a non-commercial educational recreation of the original Tetris concept.
+
+---
+
+## 🏗 System Architecture
+
+**Display:**
+10 × 20 LED strip matrix (200 individually addressable LEDs)
+
+**Core Components:**
+
+* Game logic engine
+* Piece generation and rotation system
+* Collision detection
+* Line clearing mechanics
+* LED rendering controller
+* Hardware input handling
+
+The architecture separates:
+
+* Game state logic
+* Rendering logic
+* Hardware abstraction
+
+This allows easier testing, debugging, and future scalability.
+
+---
+
+## 🧠 Learning Objectives
+
+* Embedded systems programming
+* Real-time LED control
+* Game state management
+* Modular software design
+* Hardware-software integration
+
+---
+
+## 👥 Authors
 
 Created by:
 
+* Aidar Kadyr
+* Khaya Mxenge
+* Aadarash Nigel Pinto
+* Siyu Chen
+* Amy Cen
 
-Aidar Kadyr
+Creapolis, Coburg, Germany
+2026
 
-Khaya Mxenge
+---
 
-Aadarash Nigel Pinto
+## 📜 License
 
-Siyu Chen
+This project is licensed under the MIT License.
+See the `LICENSE` file for details.
 
-Amy Cen
+---
 
+## ⚠ Disclaimer
 
+This project is an independent educational recreation of the Tetris game concept.
+It is not affiliated with or endorsed by The Tetris Company.
 
-Technical Overview:
-
-
-10 × 20 LED matrix display
-
-Standalone arcade architecture
-
-Hardware-integrated LED strip system
-
-Educational recreation of the original Tetris concept
-
-License
-
-This project is released under the MIT License.
