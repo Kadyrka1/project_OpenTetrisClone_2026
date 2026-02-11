@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
-const int UP_PIN    = 14;
-const int DOWN_PIN  = 27;
+const int UP_PIN    = 27;
+const int DOWN_PIN  = 14;
 const int LEFT_PIN  = 16;
 const int RIGHT_PIN = 17;
 
