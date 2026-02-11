@@ -1,6 +1,6 @@
 #include <FastLED.h>
 
-#define NUM_LEDS 10
+#define NUM_LEDS 100
 #define DATA_PIN 23
 CRGB leds[NUM_LEDS];
 bool stripInitialized = false;
