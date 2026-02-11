@@ -1,0 +1,61 @@
+#include <Arduino.h>
+
+const int UP_PIN    = 14;
+const int DOWN_PIN  = 27;
+const int LEFT_PIN  = 16;
+const int RIGHT_PIN = 17;
+
+const uint32_t debounceMs = 30;
+
+uint8_t lastState = 0xFF;      // last stable state (bitfield)
+uint8_t lastRead  = 0xFF;      // last raw read
+uint32_t lastChangeTime = 0;
+
+uint8_t readButtons() {
+  // pressed = 1, released = 0 (more intuitive)
+  uint8_t s = 0;
+  if (digitalRead(UP_PIN)    == LOW) s |= (1 << 0);
+  if (digitalRead(DOWN_PIN)  == LOW) s |= (1 << 1);
+  if (digitalRead(LEFT_PIN)  == LOW) s |= (1 << 2);
+  if (digitalRead(RIGHT_PIN) == LOW) s |= (1 << 3);
+  return s;
+}
+
+void printState(uint8_t s) {
+  if (s == 0) {
+    Serial.println("NONE");
+    return;
+  }
+  if (s & (1 << 0)) Serial.print("UP ");
+  if (s & (1 << 1)) Serial.print("DOWN ");
+  if (s & (1 << 2)) Serial.print("LEFT ");
+  if (s & (1 << 3)) Serial.print("RIGHT ");
+  Serial.println();
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(UP_PIN,    INPUT_PULLUP);
+  pinMode(DOWN_PIN,  INPUT_PULLUP);
+  pinMode(LEFT_PIN,  INPUT_PULLUP);
+  pinMode(RIGHT_PIN, INPUT_PULLUP);
+
+  Serial.println("4-Direction Joystick Test Ready!");
+  Serial.println("Press directions; output prints on change.");
+}
+
+void loop() {
+  uint8_t now = readButtons();
+
+  // debounce: wait until reading stays the same for debounceMs
+  if (now != lastRead) {
+    lastRead = now;
+    lastChangeTime = millis();
+  }
+
+  if ((millis() - lastChangeTime) >= debounceMs && now != lastState) {
+    lastState = now;
+    printState(lastState);
+  }
+}
