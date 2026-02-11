@@ -26,18 +26,14 @@ This is a non-commercial educational recreation of the original Tetris concept.
 ---
 
 ## 🏗 System Architecture
-
-**Display:**
-10 × 20 LED strip matrix (200 individually addressable LEDs)
-
 **Core Components:**
 
-* Game logic engine
-* Piece generation and rotation system
-* Collision detection
-* Line clearing mechanics
-* LED rendering controller
-* Hardware input handling
+* ESP32 D1 R32 - ESP32 DEV MODULE 
+* 10 × 10 LED strip matrix (100 individually addressable LEDs, WS2813)
+* HD44780 2004 LCD display 4x20 characters blue
+* Button
+* Joystick 
+
 
 The architecture separates:
 
