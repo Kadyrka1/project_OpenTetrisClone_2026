@@ -17,20 +17,32 @@ void updateDisplay(int latestScore, int topScore, bool inMenuState) {
     lcd.setCursor(0,0);
     lcd.print("=== MAIN MENU ===");
 
+    lcd.setCursor(0,1);
+    lcd.print("Last score: ");
+    lcd.print(latestScore);
+    
     lcd.setCursor(0,2);
-    lcd.print("Press Start");
-  }
-  else {
-    lcd.setCursor(0,0);
     lcd.print("Top score: ");
     lcd.print(topScore);
+
+    lcd.setCursor(0,3);
+    lcd.print("'O' to start game");
+  }
+  else {
+
+    lcd.setCursor(0,0);
+    lcd.print("Game Running...");
 
     lcd.setCursor(0,1);
     lcd.print("Last score: ");
     lcd.print(latestScore);
+    
+    lcd.setCursor(0,2);
+    lcd.print("Top score: ");
+    lcd.print(topScore);
 
     lcd.setCursor(0,3);
-    lcd.print("Game Running...");
+    lcd.print("'O' to stop/resume");
   }
 }
 // --------------------------------
