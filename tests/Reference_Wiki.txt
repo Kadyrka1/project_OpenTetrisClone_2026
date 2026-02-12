@@ -1,0 +1,714 @@
+#include <SPIFFS.h>
+
+//-----------------------------------------------------------------------------------------------
+// Tetris on the Arduino //
+// GET internship //
+// Nils Koch & Yannick Schmidt //
+// Status: 09.01.2022 //
+//-----------------------------------------------------------------------------------------------
+// Code structure: http://electronoobs.com/eng_arduino_tut104_code1.php
+//-----------------------------------------------------------------------------------------------
+
+#include <EEPROM.h>
+#define EEPROM_SIZE 512  // Define EEPROM size for ESP32
+#include <Adafruit_NeoPixel.h>
+#include <LiquidCrystal_I2C.h>
+#include <Wire.h>
+
+//-----------------------------------------------------------------------------------------------
+//Defines
+
+//Playing field
+#define GRID_W 10
+#define GRID_H 20
+#define NR_LED GRID_W*GRID_H
+
+//In- & Outputs
+#define LED_DATA 7
+#define BTN_LEFT 8
+#define BTN_DOWN 10
+#define BTN_RIGHT 9
+#define BTN_ROTATE 11
+
+// Tetriminos
+#define PIECE_W 4
+#define PIECE_H 4
+#define PIECE_SIZE PIECE_W*PIECE_H
+#define DIFF_PIECES 7
+
+//Game speed
+#define DROP_MIN 70
+#define DROP_ACC 20
+#define INI_MOVE_DELAY 50
+#define INI_DROP_DELAY 500
+#define INI_DRAW_DELAY 30
+
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NR_LED, LED_DATA, NEO_GRB + NEO_KHZ800);
+LiquidCrystal_I2C lcd(0x27, 20, 4); //4x20
+
+const byte empty[] = {0};
+
+const byte piece_I[] = {
+  0, 0, 0, 0,
+  1, 1, 1, 1,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+
+  0, 0, 0, 0,
+  1, 1, 1, 1,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+};
+
+const byte piece_T[] = {
+  1, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  1, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_L[] = {
+  0, 0, 0, 0,
+  1, 1, 1, 0,
+  1, 0, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 1, 0,
+  1, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_J[] = {
+  1, 0, 0, 0,
+  1, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 0, 0,
+  1, 1, 1, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_S[] = {
+  0, 1, 1, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 0,
+
+  0, 1, 1, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_Z[] = {
+  1, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 1, 0,
+  0, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 1, 0,
+  0, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_O[] = {
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+};
+
+const byte *pieces[DIFF_PIECES + 1] = {
+  empty,
+  piece_S,
+  piece_Z,
+  piece_L,
+  piece_J,
+  piece_O,
+  piece_T,
+  piece_I,
+};
+
+const long colors[DIFF_PIECES] = {
+  0x005500, // S: green
+  0x550000, // Z: red
+  0x551500, // L: orange
+  0x000055, // J: blue
+  0x555500, // O: yellow
+  0x200020, // T: purple
+  0x005555, // I: cyan
+};
+
+//Scores
+unsigned int top_score = 0;
+unsigned int score = 0;
+
+//Times
+unsigned long timeBefore = 0;
+unsigned long timeNow = 0;
+
+//Counter
+byte i = 0;
+
+//Last values of the buttons to prevent multiple version
+byte old_button = 0;
+int old_px = 0;
+int old_want_turn = 0;
+
+//Data for current part
+int piece_id;
+int piece_rotation;
+int piece_x;
+int piece_y;
+
+//Move speed
+int long_move;
+int move_delay;
+
+//Drop speed
+int long_drop;
+int drop_delay;
+
+//Draw speed
+int last_draw;
+int last_drop;
+int last_move;
+int draw_delay;
+
+//Playing field contains color codes for each pixel
+byte grid[GRID_W * GRID_H];
+
+//Sequence of parts to avoid duplication or non-occurrence of a stone
+byte piece_sequence[DIFF_PIECES];
+byte sequence_count = DIFF_PIECES;
+
+//Pixel in place x,y in color
+void pixel(int x, int y, long color) {
+  int a;
+  if (x % 2) {
+    a = x * GRID_H + y;
+  }
+  else {
+    a = (x + 1) * GRID_H - (y + 1);
+  }
+  pixels.setPixelColor(a, color);
+}
+
+//Show playing field
+void draw_grid(){
+
+  int x, y;
+  for (y = 0; y < GRID_H; ++y) {
+
+    for (x = 0; x < GRID_W; ++x) {
+      if ((grid[y * GRID_W + x]) != 0) {
+        pixel(x, y, colors[grid[y * GRID_W + x] - 1]);
+      }
+      else {
+        pixel(x, y, 0);
+      }
+
+    }
+  }
+  pixels.show();
+}
+
+void new_piece() {
+  if ( sequence_count >= DIFF_PIECES ) {
+    // List empty
+    int i, j, k;
+    for (i = 0; i < DIFF_PIECES; i++) {
+      do {
+        // Choose random part
+        j = random(DIFF_PIECES) % DIFF_PIECES;
+        // Check if already in the sequence
+        for (k = 0; k < i; k++) {
+          if (piece_sequence[k] == j) break;
+        }
+        //When part in sequence, generate new
+      } while (k < i);
+      // Add part
+      piece_sequence[i] = j;
+    }
+    // Counter reset
+    sequence_count = 0;
+  }
+  // Load next part
+  piece_id = piece_sequence[sequence_count++] + 1;
+  // start at the top of the center
+  piece_y = -4; // begin above the screen
+  piece_x = 4;
+  piece_rotation = 0;
+}
+
+void erase_piece_from_grid() { //Tetrimino from the playing field to reinsert where else
+  int x, y;
+  //Find the first pixel of the tetrimino
+  const byte *piece = pieces[piece_id] + (piece_rotation * PIECE_H * PIECE_W);
+
+  //For every y-value...
+  for (y = 0; y < PIECE_H; y++) {
+    int ny = piece_y + y; //y-Coordinate of the pixel
+    if (ny < 0 || ny > GRID_H) continue; //If outside the grid, then ignore
+
+    //...with every x-value:
+    for (x = 0; x < PIECE_W; x++) {
+      int nx = piece_x + x; //x coordinate of the pixel
+      if (nx < 0 || nx > GRID_W) continue; //If outside the grid, then ignore
+      if (piece[y * PIECE_W + x] == 1) { //When pixels in the model of the tetrimino =1...
+        grid[ny * GRID_W + nx] = 0; //... Delete pixels from the grid
+      }
+    }
+  }
+}
+
+void add_piece_to_grid() {
+  int x, y;
+  //Find the first pixel of the tetrimino
+  const byte *piece = pieces[piece_id] + (piece_rotation * PIECE_H * PIECE_W);
+
+  //For every y-value...
+  for (y = 0; y < PIECE_H; y++) {
+    int ny = piece_y + y; //y-Coordinate of the pixel
+    if (ny < 0 || ny > GRID_H) continue; //If outside the grid, then ignore
+
+    //...with every x-value:
+    for (x = 0; x < PIECE_W; x++) {
+      int nx = piece_x + x; //x coordinate of the pixel
+      if (nx < 0 || nx > GRID_W) continue; //If outside the grid, then ignore
+      if (piece[y * PIECE_W + x] == 1) { //When pixels in the model of the tetrimino =1...
+        grid[ny * GRID_W + nx] = piece_id; //... Write color in the places of the tetrimino
+      }
+    }
+  }
+}
+
+void delete_row(int y) {
+  //Score increase
+  score = score + 10;
+
+  //Check if new top score has been reached
+  if (score > top_score)
+  {
+    EEPROM.write(1, score);
+    EEPROM.commit();   // ESP32 requires commit() to save changes - 11-02 added
+  }
+
+  //Read the latest top score
+  top_score = EEPROM.read(1);
+
+  int x;
+
+  //Line y and move everything over it down
+  for (; y > 0; y--){
+    for (x = 0; x < GRID_W; x++) {
+      grid[y * GRID_W + x] = grid[(y - 1) * GRID_W + x]; //Copy value from the line above
+    }
+  }
+
+  for (x = 0; x < GRID_W; x++) {
+    grid[x] = 0; //top line complete white
+  }
+  lcd.setCursor(0, 0);
+  lcd.print("Score: ");
+  lcd.print(score);
+  lcd.setCursor(0, 1);
+  lcd.print("Highscore: ");
+  lcd.print(top_score);
+
+  draw_grid();
+  delay(200);
+
+}
+
+void fall_faster() {
+  if (drop_delay > DROP_MIN) drop_delay -= DROP_ACC; //Cases
+}
+
+void remove_full_rows() {
+  int x, y, c;
+
+  for (y = 0; y < GRID_H; y++) {
+    c = 0;
+    for (x = 0; x < GRID_W; ++x) {
+      if ( grid[y * GRID_W + x] > 0 ) c++; //count each field that is not empty
+    }
+    if (c == GRID_W) { //When each field is occupied
+      delete_row(y); // Remove series
+      fall_faster(); //Falls speed up
+    }
+  }
+  delay(100);
+}
+
+int piece_hits_rubble(int px, int py, int pr) {
+  int x, y;
+
+  //Finding a model of the part
+  const byte *piece = pieces[piece_id] + (pr * PIECE_H * PIECE_W);
+
+  for (y = 0; y < PIECE_H; ++y) {
+    int ny = py + y;
+    if (ny < 0) continue; //About the screen, ignore
+    for (x = 0; x < PIECE_W; ++x) {
+      int nx = px + x;
+      if (piece[y * PIECE_W + x] > 0) {
+        if (ny >= GRID_H ) return 1; // part falls below from the grid
+        if (grid[ny * GRID_W + nx] != 0 ) return 1; // Parts overlap
+      }
+    }
+  }
+  return 0; //no collision
+}
+
+int piece_off_edge(int px, int py, int pr) {
+  int x, y;
+
+  //Finding a model of the part
+  const byte *piece = pieces[piece_id] + (pr * PIECE_H * PIECE_W);
+
+
+  for (y = 0; y < PIECE_H; ++y) {
+    //Calculate coordinates
+    int ny = py + y;
+    for (x = 0; x < PIECE_W; ++x) {
+      //Calculate coordinates
+      int nx = px + x;
+      if (piece[y * PIECE_W + x] > 0) {
+        if (nx < 0) return 1; // left outside the field
+        if (nx >= GRID_W ) return 1; // right outside the field
+      }
+    }
+  }
+  return 0; // on the field
+}
+
+int piece_can_fit(int px, int py, int pr) {
+
+  //fits the part and the position px,py with the rotation pr
+  if (piece_off_edge(px, py, pr) ) return 0; //No if outside the screen
+  if (piece_hits_rubble(px, py, pr) ) return 0; //No when other parts overlay
+  return 1; //otherwise yes
+}
+
+void try_to_move_piece_sideways() {
+  int new_px = 0;
+
+  //Buttons read in
+  if (! digitalRead(BTN_LEFT))
+  {
+    new_px = -1;
+  }
+
+  if (! digitalRead(BTN_RIGHT))
+  {
+    new_px = 1;
+  }
+
+  //only move when the desire for movement has changed and the part fits the new place
+  if (piece_can_fit(piece_x + new_px, piece_y, piece_rotation) == 1) {
+    piece_x += new_px;
+  }
+  old_px = new_px; //Save movement desire as a comparison value
+}
+
+
+void try_to_rotate_piece() {
+  int want_turn = 0;
+
+  //Read rotary button
+  int new_button = ! digitalRead(BTN_ROTATE);
+
+  //is the button pressed and was not pressed, try rotation
+  if ( new_button > 0 && old_button != new_button ) {
+    want_turn = 1;
+  }
+  old_button = new_button; //Save button state as a comparison value
+
+  if (want_turn == 1 && want_turn != old_want_turn) {
+    int new_pr = ( piece_rotation + 1 ) % 4; //Rotation increase
+    if (piece_can_fit(piece_x, piece_y, new_pr)) {
+      piece_rotation = new_pr; //When the tetrimino fits, rotate
+    }
+    else {
+      if (piece_can_fit(piece_x - 1, piece_y, new_pr)) { //If Tetrimino fits further left, 1 to the left and turn
+        piece_x = piece_x - 1;
+        piece_rotation = new_pr;
+      } else if (piece_can_fit(piece_x + 1, piece_y, new_pr)) { //If Tetrimino fits further right, 1 to the right and turn
+        piece_x = piece_x + 1;
+        piece_rotation = new_pr;
+      }
+    }
+  }
+  old_want_turn = want_turn; //Save comparison
+}
+
+void white() { //Make all LEDs one after the other with short delay White
+  for (int led_number = 0; led_number < NR_LED; led_number++) {
+    pixels.setPixelColor(led_number, pixels.Color(50, 50, 50));
+    pixels.show();
+    delay(5);
+  }
+}
+
+void game_over() {
+  //Score reset
+  score = 0;
+
+  //Save time
+  long over_time = millis();
+  timeBefore = over_time;
+  
+  //Start with first LED
+  int led_number = 0;
+  
+  while (HIGH) { //Endless loop
+    timeNow = millis(); //Query time
+    if (timeNow - timeBefore >= 250) { //All 250ms...
+      pixels.setPixelColor(led_number, colors[random(100) % DIFF_PIECES]);
+      pixels.show(); //... Assign and display pixel fill color
+      led_number += 1; //Next LED
+      led_number %= NR_LED; //Start from scratch at the end of the strip
+      timeBefore += 250; //Increase reference time
+    }
+    //restart?
+    if (! digitalRead(BTN_ROTATE) && timeNow - over_time >= 1000) {
+      break;
+    }
+  }
+  setup(); //Run setup
+  return; //Continue with Loop
+}
+
+void try_to_drop_piece() {
+  //Tetrimino remove from Grid
+  erase_piece_from_grid();
+  if (piece_can_fit(piece_x, piece_y + 1, piece_rotation)) { //Tetrimino fits new position
+    piece_y++; //Move part down
+    add_piece_to_grid();
+  }
+  else { //If part doesn't fit
+    add_piece_to_grid(); //Tetrimino reinsert
+    remove_full_rows(); //remove full rows
+    if (game_is_over() == 1) { //Query whether game is lost
+      game_over();
+    }
+    new_piece(); //select next part
+  }
+}
+
+void try_to_drop_faster() {
+
+  if (! digitalRead(BTN_DOWN)) //If the button down is pressed, try to move Tetrimino down
+  {
+    try_to_drop_piece();
+  }
+}
+
+void react_to_player() {
+  //Tetrimino remove from Grid
+  erase_piece_from_grid();
+
+  //Querying sideways
+  try_to_move_piece_sideways();
+
+  //Query Rotation
+  try_to_rotate_piece();
+
+  //Tetrimino Re-insert
+  add_piece_to_grid();
+
+  // Query and execute down
+  try_to_drop_faster();
+}
+
+int game_is_over() {
+  int x, y;
+  const byte *piece = pieces[piece_id] + (piece_rotation * PIECE_H * PIECE_W);
+
+  for (y = 0; y < PIECE_H; ++y) {
+    int ny = piece_y + y;
+    for (x = 0; x < PIECE_W; ++x) {
+      if (piece[y * PIECE_W + x] > 0) {
+        if (ny < 0) return 1; // Tetrimino protrudes over the screen, game over
+      }
+    }
+  }
+
+  return 0; //not yet over
+}
+
+void setup() {
+  //Set in- and outputs
+  pinMode(BTN_LEFT, INPUT_PULLUP);
+  pinMode(BTN_RIGHT, INPUT_PULLUP);
+  pinMode(BTN_DOWN, INPUT_PULLUP);
+  pinMode(BTN_ROTATE, INPUT_PULLUP);
+  pinMode(LED_DATA, OUTPUT);
+
+  // Initialize EEPROM for ESP32
+  EEPROM.begin(EEPROM_SIZE);  // ADD THIS LINE
+ 
+  //Read high score
+  top_score = EEPROM.read(1);
+
+  //LCD initialize
+  lcd.init();
+  lcd.backlight();
+
+  //Spend the start message
+  lcd.setCursor(0, 0);
+  lcd.print("Rotate to start");
+
+  //LED strip initialize and delete
+  pixels.begin();
+  pixels.clear();
+  pixels.show();
+
+  //Make sure the grid is empty
+  for (i = 0; i < GRID_W * GRID_H; ++i) {
+    grid[i] = 0;
+  }
+
+  //Set timings
+  move_delay = INI_MOVE_DELAY;
+  drop_delay = INI_DROP_DELAY;
+  draw_delay = INI_DRAW_DELAY;
+
+  //Set start time
+  last_draw = last_drop = last_move = millis();
+
+  //Waiting to touch the keys
+  while (digitalRead(BTN_ROTATE)) {}
+  delay(500);
+
+  //Initising random numbers
+  randomSeed(millis());
+  random(100);
+
+  //Tetrimino sequence fill
+  new_piece();
+
+  //Scores on Display
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Score: ");
+  lcd.print(score);
+  lcd.setCursor(0, 1);
+  lcd.print("Highscore: ");
+  lcd.print(top_score);
+
+  //Start animation
+  white();
+}
+
+void loop() {
+
+  //LCD test
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Test");
+
+  //Current time measurement
+  long t = millis();
+
+  //If enough time has passed since the last move, respond to input
+  if (t - last_move > move_delay ) {
+    last_move = t;
+    react_to_player();
+  }
+  //If enough time has passed since the last drop, move tetrimono down
+  if (t - last_drop > drop_delay ) {
+    last_drop = t;
+    try_to_drop_piece();
+  }
+  //If enough time has passed since last issue, spend playing field
+  if (t - last_draw > draw_delay ) {
+    last_draw = t;
+    draw_grid();
+  }
+}
