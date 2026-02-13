@@ -1,0 +1,231 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <FastLED.h>
+
+// =====================================================
+//                 GLOBAL CONFIG / PINS
+// =====================================================
+
+// ---------- LED GRID (WS281x) ----------
+#define LED_PIN         23
+#define NUM_LEDS        100
+#define LED_TYPE        WS2813
+#define COLOR_ORDER     GRB
+#define BRIGHTNESS      80
+
+CRGB leds[NUM_LEDS];
+
+// ---------- BUTTON ----------
+#define BUTTON_PIN      25     // change to your button GPIO
+#define BUTTON_ACTIVE_LOW true  // set false if button is active-high
+
+const unsigned long debounce_button = 100;
+
+// ---------- JOYSTICK ----------
+#define JOY_UP_PIN       27     
+#define JOY_DOWN_PIN       14     
+#define JOY_LEFT_PIN       16     
+#define JOY_RIGHT_PIN       17     
+
+const uint32_t debounce_joystick = 30;
+
+// ---------- LCD (2-wire = I2C) ----------
+LiquidCrystal_I2C lcd(0x27, 20, 4);   // If blank, try 0x3F
+unsigned long lastUpdate = 0;
+int counter = 0;
+bool inMenu = false;   // change this to test menu/game state
+
+// =====================================================
+//                     COLOURS (9)
+// =====================================================
+// 9 predefined global RGB colours
+const CRGB C0 = CRGB(255,   0,   0);  // 0: Red
+const CRGB C1 = CRGB(  0, 255,   0);  // 1: Green
+const CRGB C2 = CRGB(  0,   0, 255);  // 2: Blue
+const CRGB C3 = CRGB(255, 255,   0);  // 3: Yellow
+const CRGB C4 = CRGB(255,   0, 255);  // 4: Magenta
+const CRGB C5 = CRGB(  0, 255, 255);  // 5: Cyan
+const CRGB C6 = CRGB(255, 255, 255);  // 6: White
+const CRGB C7 = CRGB(255, 128,   0);  // 7: Orange
+const CRGB C8 = CRGB(  0,   0,   0);  // 8: Black
+
+const CRGB COLORS[9] = { C0,C1,C2,C3,C4,C5,C6,C7,C8 };
+
+// =====================================================
+//             VIRTUAL + REAL MATRIX DIMENSIONS
+// =====================================================
+
+// "Virtual" matrix (game logic grid)
+const int VIRTUAL_W = 16;
+const int VIRTUAL_H = 16;
+
+// "Real" matrix (physical LED layout)
+const int REAL_W = 10;
+const int REAL_H = 10;
+
+// =====================================================
+//                   SHAPES (16x4 each)
+// =====================================================
+
+const byte empty[] = {0};
+
+const byte piece_I[] = {
+  0, 0, 0, 0,
+  1, 1, 1, 1,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+
+  0, 0, 0, 0,
+  1, 1, 1, 1,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+};
+
+const byte piece_T[] = {
+  1, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  1, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_L[] = {
+  0, 0, 0, 0,
+  1, 1, 1, 0,
+  1, 0, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 1, 0,
+  1, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_J[] = {
+  1, 0, 0, 0,
+  1, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 0, 0,
+  1, 1, 1, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_S[] = {
+  0, 1, 1, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 0,
+
+  0, 1, 1, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_Z[] = {
+  1, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 1, 0,
+  0, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 1, 0,
+  0, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_O[] = {
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+};
+
+// =====================================================
+//                       SCORE
+// =====================================================
+unsigned int top_score = 0;
+unsigned int score = 0;
