@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <FastLED.h>
+#include <utility> //necessary for use of pairs
 
 // =====================================================
 //                 GLOBAL CONFIG / PINS
