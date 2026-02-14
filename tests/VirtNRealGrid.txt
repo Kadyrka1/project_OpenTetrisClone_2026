@@ -231,7 +231,7 @@ void action_DefineVirtGrid(){
   // visible "walls" should be at x=2 and x=13, y=13 if you want them on LED area
 
   for (int i = 0; i < VIRTUAL_H; ++i) {
-    virt_grid[2][i]  = {6, 7};   // colour=6, status=7
+    virt_grid[2][i]  = {6, 7};   // colour = white, status = border
     virt_grid[13][i] = {6, 7};
   }
 
@@ -248,10 +248,8 @@ void action_DefineVirtGrid(){
 
 void action_ClearVirtGrid() {
   for (int x = 0; x < VIRTUAL_W; x++) {
-    for (int y = 0; y < VIRTUAL_H; y++) {
-      virt_grid[x][y].first  = 8;  // colour index (black)
-      virt_grid[x][y].second = 1;  // status empty
-    }
+    for (int y = 0; y < VIRTUAL_H; y++)
+      virt_grid[x][y] = {8, 1};  // colour index (black), status = empty
   }
 }
 
