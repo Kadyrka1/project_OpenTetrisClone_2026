@@ -27,6 +27,18 @@ const CRGB COLORS[9] = {
   CRGB(0,0,0)
 };
 
+// Tetriminos
+#define PIECE_W 4
+#define PIECE_H 4
+#define PIECE_SIZE PIECE_W*PIECE_H
+#define DIFF_PIECES 7
+
+//Data for current part
+int piece_id;
+int piece_rotation;
+int piece_x;
+int piece_y;
+
 // =====================================================
 //             VIRTUAL + REAL MATRIX DIMENSIONS
 // =====================================================
@@ -38,24 +50,195 @@ const int VIRTUAL_H = 16;
 //pair of virtual grid with colour and status  
 std :: pair<long, int> virt_grid[VIRTUAL_W][VIRTUAL_H]; //defined globally
 
+// =====================================================
+//                   SHAPES (16x4 each)
+// =====================================================
+
+const byte empty[] = {0};
+
+const byte piece_I[] = {
+  0, 0, 0, 0,
+  1, 1, 1, 1,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+
+  0, 0, 0, 0,
+  1, 1, 1, 1,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+};
+
+const byte piece_T[] = {
+  1, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  1, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_L[] = {
+  0, 0, 0, 0,
+  1, 1, 1, 0,
+  1, 0, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 1, 0,
+  1, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_J[] = {
+  1, 0, 0, 0,
+  1, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 0, 0,
+  1, 1, 1, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_S[] = {
+  0, 1, 1, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 0,
+
+  0, 1, 1, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_Z[] = {
+  1, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 1, 0,
+  0, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  0, 1, 1, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 1, 0,
+  0, 1, 1, 0,
+  0, 1, 0, 0,
+  0, 0, 0, 0,
+};
+
+const byte piece_O[] = {
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+};
+
+const byte *pieces[DIFF_PIECES + 1] = {
+  empty,
+  piece_S,
+  piece_Z,
+  piece_L,
+  piece_J,
+  piece_O,
+  piece_T,
+  piece_I,
+};
 
 void action_DefineVirtGrid(){
-  // visible “walls” should be at x=3 and x=12, y=3 and y=12 if you want them on LED area
+  // visible "walls" should be at x=3 and x=12, y=3 and y=12 if you want them on LED area
 
   for (int i = 0; i < VIRTUAL_H; ++i) {
-    virt_grid[3][i]  = {1, 1};   // colour=1, status=1
-    virt_grid[12][i] = {1, 1};
+    virt_grid[2][i]  = {1, 1};   // colour=1, status=1
+    virt_grid[13][i] = {1, 1};
   }
 
   for (int i = 0; i < VIRTUAL_W; ++i) {
-    virt_grid[i][12] = {1, 1};
+    virt_grid[i][13] = {1, 1};
   }
 
   // test row inside visible area (6 is visible)
-  for (int i = 0; i < VIRTUAL_W; ++i) {
-    virt_grid[i][6] = {3, 1};    // colour=3, status=1 (yellow for example)
-  }
+  // for (int i = 0; i < VIRTUAL_W; ++i) {
+  //   virt_grid[i][6] = {3, 1};    // colour=3, status=1 (yellow for example)
+  // }
 }
+
 
 void action_ClearVirtGrid() {
   for (int x = 0; x < VIRTUAL_W; x++) {
@@ -66,6 +249,52 @@ void action_ClearVirtGrid() {
   }
 }
 
+
+void action_SpawnPiece(){
+  // Select random Tetris piece and add it to the Grid at row 6
+  
+  // Choose random piece (1-7, skipping 0 which is empty)
+  piece_id = random(1, DIFF_PIECES + 1);
+  
+  // Choose random color (0-7, skipping 8 which is black)
+  int piece_color = random(0, 8);
+  
+  // Set initial position - spawn at row 6 (y=6)
+  piece_x = 6;  // Center horizontally in the visible area
+  piece_y = 6;  // Row 6
+  piece_rotation = 0;  // No rotation
+  
+  // Get pointer to the selected piece data
+  const byte *piece = pieces[piece_id] + (piece_rotation * PIECE_SIZE);
+  
+  // Draw the piece on the virtual grid
+  for (int y = 0; y < PIECE_H; y++) {
+    for (int x = 0; x < PIECE_W; x++) {
+      // Check if this part of the piece is filled (1) or empty (0)
+      if (piece[y * PIECE_W + x] == 1) {
+        // Calculate position on virtual grid
+        int nx = piece_x + x;
+        int ny = piece_y + y;
+        
+        // Make sure we're within bounds
+        if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
+          // Set the color and status (1 = filled)
+          virt_grid[nx][ny] = {piece_color, 1};
+        }
+      }
+    }
+  }
+  
+  // Print debug info to Serial
+  Serial.print("Spawned piece ID: ");
+  Serial.print(piece_id);
+  Serial.print(" at position (");
+  Serial.print(piece_x);
+  Serial.print(", ");
+  Serial.print(piece_y);
+  Serial.print(") with color: ");
+  Serial.println(piece_color);
+}
 
 
 // ---------------- GRID ----------------
@@ -146,6 +375,11 @@ void ReadCommands() {
           Serial.println("Format error");
         }
       }
+      // New command to spawn a piece
+      else if (line.startsWith("spawnPiece")) {
+        action_SpawnPiece();
+        Serial.println("Piece spawned");
+      }
 
       line = "";
     }
@@ -164,9 +398,14 @@ void setup() {
 
   action_ClearVirtGrid();
   action_DefineVirtGrid();
+  
+  // Optional: spawn a piece at startup for testing
+  action_SpawnPiece();
 }
 
 void loop() {
   action_UpdateGridFromVirt();
   ReadCommands();
+//  action_GravityOnPiece();
+  delay(1000);
 }
