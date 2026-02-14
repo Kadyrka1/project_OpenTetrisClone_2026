@@ -1,0 +1,172 @@
+//-----------------------------------------------------------------------------------------------
+//------LIBRARIES----------
+
+#include <utility> //necessary for use of pairs
+#include <FastLED.h>
+#include <ctype.h>
+
+// ---------------- LED CONFIG ----------------
+#define LED_PIN       23
+#define NUM_LEDS      100
+#define BRIGHTNESS    80
+#define LED_TYPE      WS2812B
+#define COLOR_ORDER   GRB
+
+CRGB leds[NUM_LEDS];
+
+// ---------------- 9 COLORS ----------------
+const CRGB COLORS[9] = {
+  CRGB(255,0,0),
+  CRGB(0,255,0),
+  CRGB(0,0,255),
+  CRGB(255,255,0),
+  CRGB(255,0,255),
+  CRGB(0,255,255),
+  CRGB(255,255,255),
+  CRGB(255,128,0),
+  CRGB(0,0,0)
+};
+
+// =====================================================
+//             VIRTUAL + REAL MATRIX DIMENSIONS
+// =====================================================
+
+// "Virtual" matrix (game logic grid)
+const int VIRTUAL_W = 16;
+const int VIRTUAL_H = 16;
+
+//pair of virtual grid with colour and status  
+std :: pair<long, int> virt_grid[VIRTUAL_W][VIRTUAL_H]; //defined globally
+
+
+void action_DefineVirtGrid(){
+  // visible “walls” should be at x=3 and x=12, y=3 and y=12 if you want them on LED area
+
+  for (int i = 0; i < VIRTUAL_H; ++i) {
+    virt_grid[3][i]  = {1, 1};   // colour=1, status=1
+    virt_grid[12][i] = {1, 1};
+  }
+
+  for (int i = 0; i < VIRTUAL_W; ++i) {
+    virt_grid[i][12] = {1, 1};
+  }
+
+  // test row inside visible area (6 is visible)
+  for (int i = 0; i < VIRTUAL_W; ++i) {
+    virt_grid[i][6] = {3, 1};    // colour=3, status=1 (yellow for example)
+  }
+}
+
+void action_ClearVirtGrid() {
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
+      virt_grid[x][y].first  = 8;  // colour index (black)
+      virt_grid[x][y].second = 0;  // status empty
+    }
+  }
+}
+
+
+
+// ---------------- GRID ----------------
+static const int W = 10;
+static const int H = 10;
+
+int xyToIndex(int x, int y) {
+  if (x < 0 || x >= W || y < 0 || y >= H) return -1;
+
+  int rowFromBottom = (H - 1) - y;
+  int base = rowFromBottom * W;
+
+  if (rowFromBottom % 2 == 0)
+    return base + x;
+  else
+    return base + (W - 1 - x);
+}
+
+// Crop settings: remove 3 from each side of 16x16 -> 10x10
+const int CROP = 3;
+
+// Call this whenever you want to draw the current virtual grid to LEDs
+void action_UpdateGridFromVirt() {
+  for (int ry = 0; ry < H; ry++) {        // real y: 0..9
+    for (int rx = 0; rx < W; rx++) {      // real x: 0..9
+
+      int vx = rx + CROP;                 // virtual x: 3..12
+      int vy = ry + CROP;                 // virtual y: 3..12
+
+      // Safety (should always be in range with these constants)
+      if (vx < 0 || vx >= VIRTUAL_W || vy < 0 || vy >= VIRTUAL_H) continue;
+
+      int status = virt_grid[vx][vy].second;          // 0/1
+      int colour = (int)virt_grid[vx][vy].first;      // expected 0..8
+
+      // If cell is empty, draw black (choose 8 or whatever you want)
+      if (status == 0) colour = 8;
+
+      int idx = xyToIndex(rx, ry);
+      if (idx >= 0) leds[idx] = COLORS[colour];
+    }
+  }
+
+  FastLED.show();
+}
+
+// ---------------- DRAW FUNCTION ----------------
+void drawPixel(int x, int y, int colour) {
+  if (colour < 0 || colour > 8) return;
+
+  int idx = xyToIndex(x, y);
+  if (idx < 0) return;
+
+  leds[idx] = COLORS[colour];
+  FastLED.show();
+}
+
+// ---------------- COMMAND READER ----------------
+void ReadCommands() {
+  static String line = "";
+
+  while (Serial.available()) {
+    char c = Serial.read();
+
+    if (c == '\r') continue;
+
+    if (c == '\n') {
+      line.trim();
+
+      // Expect format: drawPixel(x,y,c)
+      if (line.startsWith("drawPixel")) {
+        int x,y,c;
+
+        if (sscanf(line.c_str(), "drawPixel(%d,%d,%d)", &x, &y, &c) == 3) {
+          drawPixel(x,y,c);
+          Serial.println("OK");
+        } else {
+          Serial.println("Format error");
+        }
+      }
+
+      line = "";
+    }
+    else {
+      line += c;
+    }
+  }
+}
+
+// ---------------- SETUP / LOOP ----------------
+void setup() {
+  Serial.begin(115200);
+  FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+  FastLED.setBrightness(BRIGHTNESS);
+  FastLED.clear(true);
+
+  action_ClearVirtGrid();
+  action_DefineVirtGrid();
+}
+
+void loop() {
+  action_UpdateGridFromVirt();
+  ReadCommands();
+}
