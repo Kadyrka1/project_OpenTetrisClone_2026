@@ -1,7 +1,7 @@
 #include <FastLED.h>
 #include <ctype.h>
 
-// -------------------- LED CONFIG --------------------
+// ---------------- LED CONFIG ----------------
 #define LED_PIN       23
 #define NUM_LEDS      100
 #define BRIGHTNESS    80
@@ -10,204 +10,86 @@
 
 CRGB leds[NUM_LEDS];
 
-// -------------------- 9 PREDEFINED GLOBAL COLORS --------------------
-const CRGB C0 = CRGB(255,   0,   0);
-const CRGB C1 = CRGB(  0, 255,   0);
-const CRGB C2 = CRGB(  0,   0, 255);
-const CRGB C3 = CRGB(255, 255,   0);
-const CRGB C4 = CRGB(255,   0, 255);
-const CRGB C5 = CRGB(  0, 255, 255);
-const CRGB C6 = CRGB(255, 255, 255);
-const CRGB C7 = CRGB(255, 128,   0);
-const CRGB C8 = CRGB(128,   0, 255);
+// ---------------- 9 COLORS ----------------
+const CRGB COLORS[9] = {
+  CRGB(255,0,0),
+  CRGB(0,255,0),
+  CRGB(0,0,255),
+  CRGB(255,255,0),
+  CRGB(255,0,255),
+  CRGB(0,255,255),
+  CRGB(255,255,255),
+  CRGB(255,128,0),
+  CRGB(128,0,255)
+};
 
-const CRGB COLORS[9] = { C0, C1, C2, C3, C4, C5, C6, C7, C8 };
-
-// -------------------- GRID CONFIG --------------------
+// ---------------- GRID ----------------
 static const int W = 10;
 static const int H = 10;
 
-// Optional transforms (set as needed)
-static const bool FLIP_X = false;
-static const bool FLIP_Y = false;
-static const bool REVERSE_INDEX = false;
-
-// Serpentine mapping with base rule: (0,9) == 0
 int xyToIndex(int x, int y) {
   if (x < 0 || x >= W || y < 0 || y >= H) return -1;
 
-  if (FLIP_X) x = (W - 1) - x;
-  if (FLIP_Y) y = (H - 1) - y;
-
-  int rowFromBottom = (H - 1) - y;  // y=9 -> 0
+  int rowFromBottom = (H - 1) - y;
   int base = rowFromBottom * W;
 
-  int idx;
-  if ((rowFromBottom % 2) == 0) idx = base + x;            // L->R
-  else                         idx = base + (W - 1 - x);   // R->L
-
-  if (REVERSE_INDEX) idx = (NUM_LEDS - 1) - idx;
-  return idx;
+  if (rowFromBottom % 2 == 0)
+    return base + x;
+  else
+    return base + (W - 1 - x);
 }
 
-// -------------------- YOUR FUNCTION --------------------
+// ---------------- DRAW FUNCTION ----------------
 void drawPixel(int x, int y, int colour) {
   if (colour < 0 || colour > 8) return;
+
   int idx = xyToIndex(x, y);
-  if (idx < 0 || idx >= NUM_LEDS) return;
+  if (idx < 0) return;
 
   leds[idx] = COLORS[colour];
   FastLED.show();
 }
 
-// Some extra functions to demonstrate dispatcher calling “any other function”
-void clearLeds() {
-  FastLED.clear(true);
-}
-
-void fillColour(int colour) {
-  if (colour < 0 || colour > 8) return;
-  for (int i = 0; i < NUM_LEDS; i++) leds[i] = COLORS[colour];
-  FastLED.show();
-}
-
-// -------------------- SERIAL LINE READER --------------------
-String readLine() {
+// ---------------- COMMAND READER ----------------
+void ReadCommands() {
   static String line = "";
+
   while (Serial.available()) {
-    char c = (char)Serial.read();
+    char c = Serial.read();
+
     if (c == '\r') continue;
+
     if (c == '\n') {
-      String out = line;
+      line.trim();
+
+      // Expect format: drawPixel(x,y,c)
+      if (line.startsWith("drawPixel")) {
+        int x,y,c;
+
+        if (sscanf(line.c_str(), "drawPixel(%d,%d,%d)", &x, &y, &c) == 3) {
+          drawPixel(x,y,c);
+          Serial.println("OK");
+        } else {
+          Serial.println("Format error");
+        }
+      }
+
       line = "";
-      out.trim();
-      return out;
     }
-    line += c;
-  }
-  return "";
-}
-
-// Helpers: trim spaces (both ends)
-static String trimCopy(const String& s) {
-  String t = s;
-  t.trim();
-  return t;
-}
-
-// Parse inside parentheses into up to 3 ints: "1, 2, 3"
-bool parseArgsUpTo3(const String& inside, int &a, int &b, int &c, int &count) {
-  count = 0;
-
-  // Copy to C string for sscanf; also allow spaces
-  char buf[80];
-  inside.toCharArray(buf, sizeof(buf));
-
-  // Try 3, then 2, then 1
-  int n1, n2, n3;
-  if (sscanf(buf, " %d , %d , %d ", &n1, &n2, &n3) == 3) {
-    a = n1; b = n2; c = n3; count = 3; return true;
-  }
-  if (sscanf(buf, " %d , %d ", &n1, &n2) == 2) {
-    a = n1; b = n2; count = 2; return true;
-  }
-  if (sscanf(buf, " %d ", &n1) == 1) {
-    a = n1; count = 1; return true;
-  }
-  return false;
-}
-
-// -------------------- THE DISPATCHER YOU ASKED FOR --------------------
-// Accepts commands like:
-//   drawPixel(1,1,1)
-//   clear()
-//   off()
-//   fill(2)
-void handleSerialCommand(const String& inputRaw) {
-  String input = inputRaw;
-  input.trim();
-  if (input.length() == 0) return;
-
-  // Find parentheses (optional for no-arg commands)
-  int pOpen = input.indexOf('(');
-  int pClose = input.lastIndexOf(')');
-
-  String fname;
-  String argsInside = "";
-
-  if (pOpen >= 0 && pClose > pOpen) {
-    fname = trimCopy(input.substring(0, pOpen));
-    argsInside = trimCopy(input.substring(pOpen + 1, pClose));
-  } else {
-    // allow "clear" without "()"
-    fname = input;
-  }
-
-  fname.toLowerCase();
-
-  int a=0, b=0, c=0, cnt=0;
-  bool hasArgs = (pOpen >= 0 && pClose > pOpen);
-
-  if (hasArgs && argsInside.length() > 0) {
-    if (!parseArgsUpTo3(argsInside, a, b, c, cnt)) {
-      Serial.println("Parse error. Example: drawPixel(1,1,3)");
-      return;
+    else {
+      line += c;
     }
   }
-
-  // ---- Dispatch table (add more else-if blocks for more functions) ----
-  if (fname == "drawpixel") {
-    if (!hasArgs || cnt != 3) {
-      Serial.println("Usage: drawPixel(x,y,colour)");
-      return;
-    }
-    drawPixel(a, b, c);
-    Serial.printf("OK drawPixel(%d,%d,%d)\n", a, b, c);
-    return;
-  }
-
-  if (fname == "clear" || fname == "off") {
-    clearLeds();
-    Serial.println("OK clear()");
-    return;
-  }
-
-  if (fname == "fill") {
-    if (!hasArgs || cnt != 1) {
-      Serial.println("Usage: fill(colour)");
-      return;
-    }
-    fillColour(a);
-    Serial.printf("OK fill(%d)\n", a);
-    return;
-  }
-
-  // Help / unknown
-  Serial.println("Unknown command. Try:");
-  Serial.println("  drawPixel(1,1,1)");
-  Serial.println("  fill(2)");
-  Serial.println("  clear()");
-  Serial.println("  off()");
 }
 
-// -------------------- SETUP / LOOP --------------------
+// ---------------- SETUP / LOOP ----------------
 void setup() {
   Serial.begin(115200);
-  delay(200);
-
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
   FastLED.clear(true);
-
-  Serial.println("Ready. Commands:");
-  Serial.println("  drawPixel(x,y,colour)");
-  Serial.println("  fill(colour)");
-  Serial.println("  clear()");
-  Serial.println("  off()");
 }
 
 void loop() {
-  String line = readLine();
-  if (line.length() == 0) return;
-  handleSerialCommand(line);
+  ReadCommands();   // <- YES. Only one function.
 }
