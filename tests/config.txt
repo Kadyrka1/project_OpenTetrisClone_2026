@@ -59,6 +59,8 @@ const CRGB COLORS[9] = { C0,C1,C2,C3,C4,C5,C6,C7,C8 };
 // "Virtual" matrix (game logic grid)
 const int VIRTUAL_W = 16;
 const int VIRTUAL_H = 16;
+//pair of virtual grid with colour and status  
+std :: pair<long, int> virt_grid[VIRTUAL_W][VIRTUAL_H]; //defined globally
 
 // "Real" matrix (physical LED layout)
 const int REAL_W = 10;
