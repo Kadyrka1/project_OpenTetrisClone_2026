@@ -64,7 +64,7 @@ Cell virt_entity[VIRTUAL_W][VIRTUAL_H];
 Cell virt_entity_prev[VIRTUAL_W][VIRTUAL_H];
 Cell virt_overlap[VIRTUAL_W][VIRTUAL_H];
 
-// array with the sum of 2 to the power of the locked cell index for each row
+// array with the sum for each row
 // needed for row fill check
 std::array<int, H> row_sum;
 
@@ -75,11 +75,6 @@ std::array<int, H> row_sum;
 const byte empty[] = {0};
 
 const byte piece_I[] = {
-  0, 0, 0, 0,
-  1, 1, 1, 1,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-
   0, 1, 0, 0,
   0, 1, 0, 0,
   0, 1, 0, 0,
@@ -90,141 +85,146 @@ const byte piece_I[] = {
   0, 0, 0, 0,
   0, 0, 0, 0,
 
-  0, 1, 0, 0,
-  0, 1, 0, 0,
-  0, 1, 0, 0,
-  0, 1, 0, 0,
+  0, 0, 1, 0,
+  0, 0, 1, 0,
+  0, 0, 1, 0,
+  0, 0, 1, 0,
+
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+  1, 1, 1, 1,
+  0, 0, 0, 0,
 };
 
 const byte piece_T[] = {
-  1, 1, 1, 0,
-  0, 1, 0, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
-
-  0, 1, 0, 0,
-  1, 1, 0, 0,
-  0, 1, 0, 0,
-  0, 0, 0, 0,
-
   0, 1, 0, 0,
   1, 1, 1, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 0, 0,
   0, 1, 1, 0,
   0, 1, 0, 0,
+
   0, 0, 0, 0,
+  0, 0, 0, 0,
+  1, 1, 1, 0,
+  0, 1, 0, 0,
+
+  0, 0, 0, 0,
+  0, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 1, 0, 0,
 };
 
 const byte piece_L[] = {
   0, 0, 0, 0,
-  1, 1, 1, 0,
-  1, 0, 0, 0,
-  0, 0, 0, 0,
-
-  1, 1, 0, 0,
-  0, 1, 0, 0,
-  0, 1, 0, 0,
-  0, 0, 0, 0,
-
   0, 0, 1, 0,
   1, 1, 1, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 0, 0,
   0, 1, 0, 0,
   0, 1, 1, 0,
+
   0, 0, 0, 0,
+  0, 0, 0, 0,
+  1, 1, 1, 0,
+  1, 0, 0, 0,
+
+  0, 0, 0, 0,
+  1, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
 };
 
 const byte piece_J[] = {
+  0, 0, 0, 0,
   1, 0, 0, 0,
   1, 1, 1, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 1, 0,
   0, 1, 0, 0,
   0, 1, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 0, 0, 0,
   1, 1, 1, 0,
   0, 0, 1, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 0, 0,
   0, 1, 0, 0,
   1, 1, 0, 0,
-  0, 0, 0, 0,
 };
 
 const byte piece_S[] = {
+  0, 0, 0, 0,
   0, 1, 1, 0,
   1, 1, 0, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 0, 0,
   0, 1, 1, 0,
   0, 0, 1, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 1, 0,
   1, 1, 0, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 0, 0,
   0, 1, 1, 0,
   0, 0, 1, 0,
-  0, 0, 0, 0,
 };
 
 const byte piece_Z[] = {
+  0, 0, 0, 0,
   1, 1, 0, 0,
   0, 1, 1, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 0, 1, 0,
   0, 1, 1, 0,
   0, 1, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   1, 1, 0, 0,
   0, 1, 1, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 0, 1, 0,
   0, 1, 1, 0,
   0, 1, 0, 0,
-  0, 0, 0, 0,
 };
 
 const byte piece_O[] = {
+  0, 0, 0, 0,
   1, 1, 0, 0,
   1, 1, 0, 0,
   0, 0, 0, 0,
+
+  0, 0, 0, 0,
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 0, 0,
+  1, 1, 0, 0,
+  1, 1, 0, 0,
   0, 0, 0, 0,
 
-  1, 1, 0, 0,
-  1, 1, 0, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
-
   1, 1, 0, 0,
   1, 1, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-
-  1, 1, 0, 0,
-  1, 1, 0, 0,
-  0, 0, 0, 0,
   0, 0, 0, 0,
 };
 
@@ -279,11 +279,6 @@ void action_Clear_row_sum() {
     row_sum[i] = 0;
 }
 
-void action_FixPiece() { //fix falling piece to not be movable anymore from the entity grid to the virtual grid
-  
-
-}
-
 
 // Helper function: Remove current piece from the grid
 void action_RemovePieceFromGrid() {
@@ -330,7 +325,7 @@ void action_AddPieceToGrid() {
 
 
 
-bool if_VerticalCollision(int new_x, int new_y, int new_rotation) {
+bool if_Collision(int new_x, int new_y, int new_rotation) {
   const byte *piece = pieces[piece_id] + (new_rotation * PIECE_SIZE);
 
   for (int y = 0; y < PIECE_H; y++) {
@@ -350,6 +345,9 @@ bool if_VerticalCollision(int new_x, int new_y, int new_rotation) {
   return false;
 }
 
+bool if_GameEnd(){
+
+}
 
 // =====================================================
 //                   ACTION Functions
@@ -367,7 +365,7 @@ void action_GravityOnPiece() {
   action_RemovePieceFromGrid();
 
   // test move down
-  if (if_VerticalCollision(piece_x, piece_y + 1, piece_rotation)) {
+  if (if_Collision(piece_x, piece_y + 1, piece_rotation)) {
     // restore previous entity state
     for (int x = 0; x < VIRTUAL_W; x++) {
       for (int y = 0; y < VIRTUAL_H; y++) {
@@ -389,8 +387,17 @@ void action_LockPiece() {
         virt_grid[x][y] = virt_entity[x][y];   // copy color
         virt_grid[x][y].second = 3;            // locked
         virt_entity[x][y] = Cell{8, 0};        // clear entity cell
-        if (row_sum[y] % (1 << x+1) >= 1 << x)
-          row_sum[y] += 1 << x;
+        row_sum[y]++;
+      }
+    }
+  }
+}
+
+void action_SumRows() {
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
+      if (virt_entity[x][y].second != 0) {
+        row_sum[y] += virt_entity[x][y].second;
       }
     }
   }
@@ -428,13 +435,14 @@ void action_SpawnPiece() {
 
 
 void action_ClearFilledRows() {
-  for (int i = 0; i < H; ++i)
-    if (row_sum == (1 << H+1) -1) // condition for the row to be filled
+  for (int i = 0; i < H; ++i) 
+    if (row_sum == 30) { // condition for the row to be filled
 
       // clearing the row in the virtual grid
       for (int x = 0; x < W; ++x)
         virt_grid[x][y] = Cell{8, 0};
-
+      row_sum[i] = 0;
+  }
   // Not yet writen
   //action_GravityOnGrid();
 
@@ -526,14 +534,14 @@ void ReadCommands() {
       // Rotation of the piece
       else if (line.startsWith("q") || line.startsWith("Q")) {
         action_RemovePieceFromGrid();
-        if(!if_VerticalCollision(piece_x, piece_y, (piece_rotation +3)%4) && !if_HorizaontalCollision(piece_x, piece_y, (piece_rotation +3)%4)) {
+        if(!if_Collision(piece_x, piece_y, (piece_rotation +3)%4)) {
           piece_rotation = (piece_rotation +3)%4;
           action_AddPieceToGrid();
         }
       }
       else if (line.startsWith("e") || line.startsWith("E")) {
         action_RemovePieceFromGrid();
-        if(!if_VerticalCollision(piece_x, piece_y, (piece_rotation +1)%4) && !if_HorizaontalCollision(piece_x, piece_y, (piece_rotation +1)%4)) {
+        if(!if_Collision(piece_x, piece_y, (piece_rotation +1)%4)) {
           piece_rotation = (piece_rotation +1)%4;
           action_AddPieceToGrid();
         }
@@ -542,21 +550,21 @@ void ReadCommands() {
       // movement of the piece
       else if (line.startsWith("a") || line.startsWith("A")) {
         action_RemovePieceFromGrid();
-        if(!if_VerticalCollision(piece_x -1, piece_y, piece_rotation) && !if_HorizaontalCollision(piece_x -1, piece_y, piece_rotation)) {
+        if(!if_Collision(piece_x -1, piece_y, piece_rotation)) {
           piece_x--;
           action_AddPieceToGrid();
         }
       }
       else if (line.startsWith("d") || line.startsWith("D")) {
         action_RemovePieceFromGrid();
-        if(!if_VerticalCollision(piece_x +1, piece_y, piece_rotation) && !if_HorizaontalCollision(piece_x +1, piece_y, piece_rotation)) {
+        if(!if_Collision(piece_x +1, piece_y, piece_rotation)) {
           piece_x++;
           action_AddPieceToGrid();
         }
       }
       else if (line.startsWith("s") || line.startsWith("S")) {
         action_RemovePieceFromGrid();
-        if(!if_VerticalCollision(piece_x, piece_y +1, piece_rotation) && !if_HorizaontalCollision(piece_x, piece_y +1, piece_rotation)) {
+        if(!if_Collision(piece_x, piece_y +1, piece_rotation)) {
           piece_y++;
           action_AddPieceToGrid();
         }
@@ -600,7 +608,7 @@ void loop() {
   while(!if_GameEnd()){
     for(int i = 0; i < 30; ++i) {
       // check for User Input
-      if(!if_HorizontalColision() && !if_VerticalCollision*()) {
+      if(!if_HorizontalColision() && !if_Collision*()) {
         // Execute User Input
         action_ClearFilledRows();
       }
@@ -612,3 +620,12 @@ void loop() {
   }
   action_GameEnd();
 } */
+
+
+
+
+
+
+
+
+
