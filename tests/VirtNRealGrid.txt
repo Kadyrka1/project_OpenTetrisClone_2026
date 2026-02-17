@@ -283,7 +283,9 @@ bool if_VerticalCollision(int new_x, int new_y, int new_rotation) {
   }
 }
 
------------------------------
+// =====================================================
+//                   ACTION Functions
+// =====================================================
 
 void action_SpawnPiece(){
   // Select random Tetris piece and add it to the Grid at row 6
