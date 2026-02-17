@@ -341,6 +341,37 @@ bool if_VerticalCollision(int new_x, int new_y, int new_rotation) {
 //                   ACTION Functions
 // =====================================================
 
+void action_GravityOnPiece() {
+
+  if (if_VerticalCollision(virt_grid, virt_entity)) {
+
+    // Restore previous entity state
+    for (int x = 0; x < VIRTUAL_W; x++) {
+      for (int y = 0; y < VIRTUAL_H; y++) {
+        virt_entity[x][y] = virt_entity_p[x][y];
+      }
+    }
+
+    action_LockPiece();
+  }
+  else {
+    piece_y++;
+  }
+}
+
+void action_LockPiece() {
+
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
+
+      virt_grid[x][y].first  += virt_entity[x][y].first;
+      virt_grid[x][y].second += virt_entity[x][y].second;
+
+    }
+  }
+
+}
+
 void action_SpawnPiece(){
   // Select random Tetris piece and add it to the Grid at row 6
   
