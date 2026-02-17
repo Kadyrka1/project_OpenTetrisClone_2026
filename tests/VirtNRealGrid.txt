@@ -255,6 +255,35 @@ void action_ClearVirtGrid() {
   }
 }
 
+// =====================================================
+//                   IF Functions
+// =====================================================
+
+bool if_VerticalCollision(int new_x, int new_y, int new_rotation) {
+
+  // Build virt_overlap = virt_grid + virt_entity (status-wise)
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
+      int s = virt_grid[x][y].second + virt_entity[x][y].second;
+      virt_overlap[x][y] = {8, s};
+    }
+  }
+
+  // Collision test: any even status != 0 => overlap
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
+      int s = virt_overlap[x][y].second;
+      if (s != 0 && (s % 2 == 0)) {
+        return true;
+      }
+      else{
+        return false;
+      }
+    }
+  }
+}
+
+-----------------------------
 
 void action_SpawnPiece(){
   // Select random Tetris piece and add it to the Grid at row 6
