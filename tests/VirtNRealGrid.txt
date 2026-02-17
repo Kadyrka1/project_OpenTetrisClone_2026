@@ -54,9 +54,11 @@ static const int H = 10;
 static const int CROP = 3;
 
 //pair of virtual grid with colour and status  
-std :: pair<long, int> virt_grid[VIRTUAL_W][VIRTUAL_H] = {8, 0}; //defined globally
-std :: pair<long, int> virt_entity[VIRTUAL_W][VIRTUAL_H] = {8, 0}; //defined globally
-std :: pair<long, int> virt_overlap[VIRTUAL_W][VIRTUAL_H] = {8, 0}; //defined globally
+std :: pair<long, int> virt_grid[VIRTUAL_W][VIRTUAL_H]; //{colour, status} of fixed pieces
+std :: pair<long, int> virt_entity[VIRTUAL_W][VIRTUAL_H]; //{colour, status} of calling pieces in current move
+std :: pair<long, int> virt_entity_prev[VIRTUAL_W][VIRTUAL_H]; //{colour, status} of falling pieces previously
+std :: pair<long, int> virt_overlap[VIRTUAL_W][VIRTUAL_H]; //{colour, status} of overlapping pieces
+
 
 // =====================================================
 //                   SHAPES (16x4 each)
