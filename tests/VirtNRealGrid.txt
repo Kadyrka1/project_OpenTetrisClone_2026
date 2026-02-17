@@ -255,6 +255,64 @@ void action_ClearVirtGrid() {
   }
 }
 
+
+void action_FixPiece() { //fix falling piece to not be movable anymore
+  const byte *piece = pieces[piece_id] + (piece_rotation * PIECE_SIZE);
+
+  for (int y = 0; y < PIECE_H; y++) {
+    for (int x = 0; x < PIECE_W; x++) {
+      if (piece[y * PIECE_W + x] == 1) {
+        int nx = piece_x + x;
+        int ny = piece_y + y;
+
+        if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
+          virt_grid[nx][ny] = {piece_colour, 3};  // lock with colour, status=3
+        }
+      }
+    }
+  }
+}
+
+
+// Helper function: Remove current piece from the grid
+void action_RemovePieceFromGrid() {
+  const byte *piece = pieces[piece_id] + (piece_rotation * PIECE_SIZE);
+  
+  for (int y = 0; y < PIECE_H; y++) {
+    for (int x = 0; x < PIECE_W; x++) {
+      if (piece[y * PIECE_W + x] == 1) {
+        int nx = piece_x + x;
+        int ny = piece_y + y;
+        
+        if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
+          // Clear this cell (set to black/empty)
+          virt_grid[nx][ny] = {8, 1};
+        }
+      }
+    }
+  }
+}
+
+// Helper function: Add current piece to the grid
+void action_AddPieceToGrid() {
+  const byte *piece = pieces[piece_id] + (piece_rotation * PIECE_SIZE);
+  
+  for (int y = 0; y < PIECE_H; y++) {
+    for (int x = 0; x < PIECE_W; x++) {
+      if (piece[y * PIECE_W + x] == 1) {
+        int nx = piece_x + x;
+        int ny = piece_y + y;
+        
+        if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
+          // Set the color and status
+          virt_grid[nx][ny] = {piece_colour, 1};
+        }
+      }
+    }
+  }
+}
+
+
 // =====================================================
 //                   IF Functions
 // =====================================================
