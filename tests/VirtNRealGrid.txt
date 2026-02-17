@@ -262,8 +262,11 @@ void action_DefineVirtGrid(){
 
 void action_ClearVirtGrid() {
   for (int x = 0; x < VIRTUAL_W; x++) {
-    for (int y = 0; y < VIRTUAL_H; y++)
-      virt_grid[x][y] = {8, 0};  // colour index (black), status = empty
+    for (int y = 0; y < VIRTUAL_H; y++) {
+      virt_entity[x][y]      = Cell{8, 0};
+      virt_entity_prev[x][y] = Cell{8, 0};
+      virt_overlap[x][y]     = Cell{8, 0};
+    }
   }
 }
 
@@ -317,29 +320,28 @@ void action_AddPieceToGrid() {
 //                   IF Functions
 // =====================================================
 
+
+
 bool if_VerticalCollision(int new_x, int new_y, int new_rotation) {
+  const byte *piece = pieces[piece_id] + (new_rotation * PIECE_SIZE);
 
-  // Build virt_overlap = virt_grid + virt_entity (status-wise)
-  for (int x = 0; x < VIRTUAL_W; x++) {
-    for (int y = 0; y < VIRTUAL_H; y++) {
-      int s = virt_grid[x][y].second + virt_entity[x][y].second;
-      virt_overlap[x][y] = {8, s};
+  for (int y = 0; y < PIECE_H; y++) {
+    for (int x = 0; x < PIECE_W; x++) {
+      if (piece[y * PIECE_W + x] != 1) continue;
+
+      int nx = new_x + x;
+      int ny = new_y + y;
+
+      // outside virtual grid -> collision
+      if (nx < 0 || nx >= VIRTUAL_W || ny < 0 || ny >= VIRTUAL_H) return true;
+
+      // collides with borders or locked blocks in virt_grid
+      if (virt_grid[nx][ny].second != 0) return true;
     }
   }
-
-  // Collision test: any even status != 0 => overlap
-  for (int x = 0; x < VIRTUAL_W; x++) {
-    for (int y = 0; y < VIRTUAL_H; y++) {
-      int s = virt_overlap[x][y].second;
-      if (s != 0 && (s % 2 == 0)) {
-        return true;
-      }
-      else{
-        return false;
-      }
-    }
-  }
+  return false;
 }
+
 
 // =====================================================
 //                   ACTION Functions
@@ -384,49 +386,34 @@ void action_LockPiece() {
   }
 }
 
-void action_SpawnPiece(){
-  // Choose random color (0-7, skipping 8 which is black)
-  piece_colour = random(0, 8);
-  // Select random Tetris piece and add it to the Grid at row 6
-  
-  // Choose random piece (1-7, skipping 0 which is empty)
-  piece_id = random(1, DIFF_PIECES + 1);
-  
-  
-  // Set initial position - spawn at row 6 (y=6)
-  piece_x = 6;  // Center horizontally in the visible area
-  piece_y = 6;  // Row 6
-  piece_rotation = 0;  // No rotation
-  
-  // Get pointer to the selected piece data
-  const byte *piece = pieces[piece_id] + (piece_rotation * PIECE_SIZE);
-  
-  // Draw the piece on the virtual grid
-  for (int y = 0; y < PIECE_H; y++) {
-    for (int x = 0; x < PIECE_W; x++) {
-      // Check if this part of the piece is filled (1) or empty (0)
-      if (piece[y * PIECE_W + x] == 1) {
-        // Calculate position on virtual grid
-        int nx = piece_x + x;
-        int ny = piece_y + y;
-        
-        // Make sure we're within bounds
-        if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
-          // Set the color and status (1 = filled)
-          virt_entity[nx][ny] = Cell{(uint8_t)piece_colour, 1};
-        }
-      }
+void clearEntity() {
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
+      virt_entity[x][y] = Cell{8, 0};
     }
   }
-  
-  // Print debug info to Serial
+}
+
+void action_SpawnPiece() {
+  clearEntity();
+
+  piece_colour = random(0, 8);
+  piece_id = random(1, DIFF_PIECES + 1);
+
+  piece_x = 6;
+  piece_y = 3;           // better: spawn near top of visible area
+  piece_rotation = 0;
+
+  action_AddPieceToGrid();
+
   Serial.print("Spawned piece ID: ");
   Serial.print(piece_id);
-  Serial.print(" at position (");
+  Serial.print(" at (");
   Serial.print(piece_x);
-  Serial.print(", ");
+  Serial.print(",");
   Serial.print(piece_y);
-  Serial.print(") with color: ");
+  Serial.print(") color: ");
+  Serial.println(piece_colour);   // <-- you were missing println
 }
 
 
@@ -446,18 +433,8 @@ int xyToIndex(int x, int y) {
 }
 
 void action_DrawToLED() {
-
-  // Serpentine mapping from (x,y) on 10x10 to linear LED index
-  auto xyToIndex = [&](int x, int y) -> int {
-    int rowFromBottom = (H - 1) - y;
-    int base = rowFromBottom * W;
-
-    if (rowFromBottom % 2 == 0)
-      return base + x;
-    else
-      return base + (W - 1 - x);
-  };
-
+  FastLED.clear(); // <--- important: wipes previous LED frame
+  
   for (int ry = 0; ry < H; ry++) {        // real y: 0..9
     for (int rx = 0; rx < W; rx++) {      // real x: 0..9
 
