@@ -48,7 +48,9 @@ const int VIRTUAL_W = 16;
 const int VIRTUAL_H = 16;
 
 //pair of virtual grid with colour and status  
-std :: pair<long, int> virt_grid[VIRTUAL_W][VIRTUAL_H] = {8, 1}; //defined globally
+std :: pair<long, int> virt_grid[VIRTUAL_W][VIRTUAL_H] = {8, 0}; //defined globally
+std :: pair<long, int> virt_entity[VIRTUAL_W][VIRTUAL_H] = {8, 0}; //defined globally
+std :: pair<long, int> virt_overlap[VIRTUAL_W][VIRTUAL_H] = {8, 0}; //defined globally
 
 // =====================================================
 //                   SHAPES (16x4 each)
@@ -221,22 +223,22 @@ const byte *pieces[DIFF_PIECES + 1] = {
   piece_I,
 };
 
-// status 1 == empty spot
-// status 3 == entity
-// status 5 == piece locked
-// status 7 == border
+// status 0 == empty spot
+// status 1 == entity
+// status 3 == piece locked
+// status 5 == border
 // any even status == overlap
 
 void action_DefineVirtGrid(){
   // visible "walls" should be at x=2 and x=13, y=13 if you want them on LED area
 
   for (int i = 0; i < VIRTUAL_H; ++i) {
-    virt_grid[2][i]  = {6, 7};   // colour = white, status = border
-    virt_grid[13][i] = {6, 7};
+    virt_grid[2][i]  = {6, 5};   // colour = white, status = border
+    virt_grid[13][i] = {6, 5};
   }
 
   for (int i = 0; i < VIRTUAL_W; ++i) {
-    virt_grid[i][13] = {6, 7};
+    virt_grid[i][13] = {6, 5};
   }
 
   // test row inside visible area (6 is visible)
@@ -249,7 +251,7 @@ void action_DefineVirtGrid(){
 void action_ClearVirtGrid() {
   for (int x = 0; x < VIRTUAL_W; x++) {
     for (int y = 0; y < VIRTUAL_H; y++)
-      virt_grid[x][y] = {8, 1};  // colour index (black), status = empty
+      virt_grid[x][y] = {8, 0};  // colour index (black), status = empty
   }
 }
 
