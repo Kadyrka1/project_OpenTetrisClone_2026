@@ -510,13 +510,13 @@ void loop() {
   action_Start();
   while(!if_GameEnd){
     for(int i = 0; i < 30; ++i) {
-    check for User Input
+    // check for User Input
     if(!if_HorizontalColision() && !if_VerticalCollision*()) {
-        Execute User Input
+       // Execute User Input
       else
-        wait 1/30 of second
+        delay(33);
     } 
-     Gravity
+    action_GravityOnPiece();
   }
   action_GameEnd();
 } */
