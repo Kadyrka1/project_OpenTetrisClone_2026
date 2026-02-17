@@ -47,6 +47,12 @@ int piece_y;
 const int VIRTUAL_W = 16;
 const int VIRTUAL_H = 16;
 
+// Real grid size (LED physical)
+static const int W = 10;
+static const int H = 10;
+// Crop settings: remove 3 from each side of 16x16 -> 10x10
+static const int CROP = 3;
+
 //pair of virtual grid with colour and status  
 std :: pair<long, int> virt_grid[VIRTUAL_W][VIRTUAL_H] = {8, 0}; //defined globally
 std :: pair<long, int> virt_entity[VIRTUAL_W][VIRTUAL_H] = {8, 0}; //defined globally
@@ -393,43 +399,37 @@ void action_SpawnPiece(){
 
 
 // ---------------- GRID ----------------
-static const int W = 10;
-static const int H = 10;
 
-int xyToIndex(int x, int y) {
-  if (x < 0 || x >= W || y < 0 || y >= H) return -1;
+void action_DrawToLED(virt_grid, virt_entity) {
 
-  int rowFromBottom = (H - 1) - y;
-  int base = rowFromBottom * W;
+  // Serpentine mapping from (x,y) on 10x10 to linear LED index
+  auto xyToIndex = [&](int x, int y) -> int {
+    int rowFromBottom = (H - 1) - y;
+    int base = rowFromBottom * W;
 
-  if (rowFromBottom % 2 == 0)
-    return base + x;
-  else
-    return base + (W - 1 - x);
-}
+    if (rowFromBottom % 2 == 0)
+      return base + x;
+    else
+      return base + (W - 1 - x);
+  };
 
-// Crop settings: remove 3 from each side of 16x16 -> 10x10
-const int CROP = 3;
-
-// Call this whenever you want to draw the current virtual grid to LEDs
-void action_UpdateGridFromVirt() {
   for (int ry = 0; ry < H; ry++) {        // real y: 0..9
     for (int rx = 0; rx < W; rx++) {      // real x: 0..9
 
       int vx = rx + CROP;                 // virtual x: 3..12
       int vy = ry + CROP;                 // virtual y: 3..12
 
-      // Safety (should always be in range with these constants)
-      if (vx < 0 || vx >= VIRTUAL_W || vy < 0 || vy >= VIRTUAL_H) continue;
-
-      int status = virt_grid[vx][vy].second;          // 0/1
-      int colour = (int)virt_grid[vx][vy].first;      // expected 0..8
-
-      // If cell is empty, draw black (choose 8 or whatever you want)
-      if (status == 0) colour = 8;
-
       int idx = xyToIndex(rx, ry);
-      if (idx >= 0) leds[idx] = COLORS[colour];
+
+      // Draw grid layer if active
+      if (virt_grid[vx][vy].second != 0) {
+        leds[idx] = COLORS[(int)virt_grid[vx][vy].first];
+      }
+
+      // Draw entity layer if active (overwrites if overlapping)
+      if (virt_entity[vx][vy].second != 0) {
+        leds[idx] = COLORS[(int)virt_entity[vx][vy].first];
+      }
     }
   }
 
