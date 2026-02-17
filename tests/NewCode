@@ -435,7 +435,8 @@ void action_ClearFilledRows() {
       for (int x = 0; x < W; ++x)
         virt_grid[x][y] = Cell{8, 0};
 
-  action_GravityOnGrid();
+  // Not yet writen
+  //action_GravityOnGrid();
 
 }
 
