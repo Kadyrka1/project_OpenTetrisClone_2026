@@ -27,6 +27,9 @@ const CRGB COLORS[9] = {
   CRGB(0,0,0)
 };
 
+int piece_colour = 0;
+
+
 // Tetriminos
 #define PIECE_W 4
 #define PIECE_H 4
@@ -53,12 +56,13 @@ static const int H = 10;
 // Crop settings: remove 3 from each side of 16x16 -> 10x10
 static const int CROP = 3;
 
-//pair of virtual grid with colour and status  
-std :: pair<long, int> virt_grid[VIRTUAL_W][VIRTUAL_H]; //{colour, status} of fixed pieces
-std :: pair<long, int> virt_entity[VIRTUAL_W][VIRTUAL_H]; //{colour, status} of calling pieces in current move
-std :: pair<long, int> virt_entity_prev[VIRTUAL_W][VIRTUAL_H]; //{colour, status} of falling pieces previously
-std :: pair<long, int> virt_overlap[VIRTUAL_W][VIRTUAL_H]; //{colour, status} of overlapping pieces
+//virtual grid and others with colour and status  
+using Cell = std::pair<uint8_t, uint8_t>; // {colorIndex, status}
 
+Cell virt_grid[VIRTUAL_W][VIRTUAL_H];
+Cell virt_entity[VIRTUAL_W][VIRTUAL_H];
+Cell virt_entity_prev[VIRTUAL_W][VIRTUAL_H];
+Cell virt_overlap[VIRTUAL_W][VIRTUAL_H];
 
 // =====================================================
 //                   SHAPES (16x4 each)
@@ -282,7 +286,7 @@ void action_RemovePieceFromGrid() {
         
         if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
           // Clear this cell (set to black/empty)
-          virt_entity[nx][ny] = {8, 1};
+          virt_entity[nx][ny] = Cell{8, 0};
         }
       }
     }
@@ -301,7 +305,7 @@ void action_AddPieceToGrid() {
         
         if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
           // Set the color and status
-          virt_entity[nx][ny] = {piece_colour, 1};
+          virt_entity[nx][ny] = Cell{(uint8_t)piece_colour, 1};
         }
       }
     }
@@ -342,44 +346,52 @@ bool if_VerticalCollision(int new_x, int new_y, int new_rotation) {
 // =====================================================
 
 void action_GravityOnPiece() {
+  // save previous entity grid
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
+      virt_entity_prev[x][y] = virt_entity[x][y];
+    }
+  }
 
-  if (if_VerticalCollision(virt_grid, virt_entity)) {
+  // remove current piece from entity
+  action_RemovePieceFromGrid();
 
-    // Restore previous entity state
+  // test move down
+  if (if_VerticalCollision(piece_x, piece_y + 1, piece_rotation)) {
+    // restore previous entity state
     for (int x = 0; x < VIRTUAL_W; x++) {
       for (int y = 0; y < VIRTUAL_H; y++) {
-        virt_entity[x][y] = virt_entity_p[x][y];
+        virt_entity[x][y] = virt_entity_prev[x][y];
       }
     }
-
     action_LockPiece();
-  }
-  else {
+  } else {
     piece_y++;
+    action_AddPieceToGrid();
   }
 }
 
-void action_LockPiece() {
 
+void action_LockPiece() {
   for (int x = 0; x < VIRTUAL_W; x++) {
     for (int y = 0; y < VIRTUAL_H; y++) {
-
-      virt_grid[x][y].first  += virt_entity[x][y].first;
-      virt_grid[x][y].second += virt_entity[x][y].second;
-
+      if (virt_entity[x][y].second != 0) {
+        virt_grid[x][y] = virt_entity[x][y];   // copy color
+        virt_grid[x][y].second = 3;            // locked
+        virt_entity[x][y] = Cell{8, 0};        // clear entity cell
+      }
     }
   }
-
 }
 
 void action_SpawnPiece(){
+  // Choose random color (0-7, skipping 8 which is black)
+  piece_colour = random(0, 8);
   // Select random Tetris piece and add it to the Grid at row 6
   
   // Choose random piece (1-7, skipping 0 which is empty)
   piece_id = random(1, DIFF_PIECES + 1);
   
-  // Choose random color (0-7, skipping 8 which is black)
-  int piece_color = random(0, 8);
   
   // Set initial position - spawn at row 6 (y=6)
   piece_x = 6;  // Center horizontally in the visible area
@@ -401,7 +413,7 @@ void action_SpawnPiece(){
         // Make sure we're within bounds
         if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
           // Set the color and status (1 = filled)
-          virt_grid[nx][ny] = {piece_color, 1};
+          virt_entity[nx][ny] = Cell{(uint8_t)piece_colour, 1};
         }
       }
     }
@@ -415,13 +427,25 @@ void action_SpawnPiece(){
   Serial.print(", ");
   Serial.print(piece_y);
   Serial.print(") with color: ");
-  Serial.println(piece_color);
 }
 
 
 // ---------------- GRID ----------------
 
-void action_DrawToLED(virt_grid, virt_entity) {
+
+int xyToIndex(int x, int y) {
+  if (x < 0 || x >= W || y < 0 || y >= H) return -1;
+
+  int rowFromBottom = (H - 1) - y;
+  int base = rowFromBottom * W;
+
+  if (rowFromBottom % 2 == 0)
+    return base + x;
+  else
+    return base + (W - 1 - x);
+}
+
+void action_DrawToLED() {
 
   // Serpentine mapping from (x,y) on 10x10 to linear LED index
   auto xyToIndex = [&](int x, int y) -> int {
@@ -517,12 +541,13 @@ void setup() {
   
   // Optional: spawn a piece at startup for testing
   action_SpawnPiece();
+  action_DrawToLED();
 }
 
 void loop() {
-  action_UpdateGridFromVirt();
+  action_GravityOnPiece();
+  action_DrawToLED();
   ReadCommands();
-//  action_GravityOnPiece();
   delay(1000);
 }
 
