@@ -262,21 +262,9 @@ void action_ClearVirtGrid() {
 }
 
 
-void action_FixPiece() { //fix falling piece to not be movable anymore
-  const byte *piece = pieces[piece_id] + (piece_rotation * PIECE_SIZE);
+void action_FixPiece() { //fix falling piece to not be movable anymore from the entity grid to the virtual grid
+  
 
-  for (int y = 0; y < PIECE_H; y++) {
-    for (int x = 0; x < PIECE_W; x++) {
-      if (piece[y * PIECE_W + x] == 1) {
-        int nx = piece_x + x;
-        int ny = piece_y + y;
-
-        if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
-          virt_grid[nx][ny] = {piece_colour, 3};  // lock with colour, status=3
-        }
-      }
-    }
-  }
 }
 
 
@@ -292,7 +280,7 @@ void action_RemovePieceFromGrid() {
         
         if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
           // Clear this cell (set to black/empty)
-          virt_grid[nx][ny] = {8, 1};
+          virt_entity[nx][ny] = {8, 1};
         }
       }
     }
@@ -311,7 +299,7 @@ void action_AddPieceToGrid() {
         
         if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
           // Set the color and status
-          virt_grid[nx][ny] = {piece_colour, 1};
+          virt_entity[nx][ny] = {piece_colour, 1};
         }
       }
     }
