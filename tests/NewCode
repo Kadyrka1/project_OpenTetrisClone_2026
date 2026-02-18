@@ -395,7 +395,7 @@ void action_SumRows() {
   for (int x = 0; x < VIRTUAL_W; x++) {
     for (int y = 0; y < VIRTUAL_H; y++) {
       if (virt_entity[x][y].second != 0) {
-        row_sum[y] += virt_entity[x][y].second;
+        row_sum[y] += virt_entity[x][y].second; //sum status // status 3 == piece locked * 10 = 30
       }
     }
   }
@@ -421,7 +421,7 @@ void action_SpawnPiece() {
   piece_colour = random(0, 8);
   piece_id = random(1, DIFF_PIECES + 1);
 
-  piece_x = 6;
+  piece_x = 10;
   piece_y = 3;           // better: spawn near top of visible area
   piece_rotation = 0;
 
@@ -438,17 +438,18 @@ void action_SpawnPiece() {
 }
 
 void action_ClearFilledRows() {
-  for (int i = 0; i < H; ++i) 
-    if (row_sum == 30) { // condition for the row to be filled
+  for (int i = 0; i < H; ++i) {
+    if (row_sum[i] == 30) { // condition for the row to be filled
 
       // clearing the row in the virtual grid
-      for (int x = 0; x < W; ++x)
-        virt_grid[x][y] = Cell{8, 0};
+      for (int x = 0; x < W; ++x){
+        virt_grid[x][i] = Cell{8, 0};
       row_sum[i] = 0;
+    }
   }
   // Not yet writen
   //action_GravityOnGrid();
-
+  }
 }
 
 
@@ -554,14 +555,14 @@ void ReadCommands() {
       else if (line.startsWith("a") || line.startsWith("A")) {
         action_RemovePieceFromGrid();
         if(!if_Collision(piece_x -1, piece_y, piece_rotation)) {
-          piece_x--;
+          piece_x--;//left
           action_AddPieceToGrid();
         }
       }
       else if (line.startsWith("d") || line.startsWith("D")) {
         action_RemovePieceFromGrid();
         if(!if_Collision(piece_x +1, piece_y, piece_rotation)) {
-          piece_x++;
+          piece_x++;//right
           action_AddPieceToGrid();
         }
       }
@@ -572,6 +573,7 @@ void ReadCommands() {
           action_AddPieceToGrid();
         }
         else {
+          action_AddPieceToGrid();
           action_LockPiece();
           action_SumRows();
         }
@@ -625,12 +627,3 @@ void loop() {
   }
   action_GameEnd();
 } */
-
-
-
-
-
-
-
-
-
