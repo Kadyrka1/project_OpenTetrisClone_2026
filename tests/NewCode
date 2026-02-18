@@ -346,7 +346,8 @@ bool if_Collision(int new_x, int new_y, int new_rotation) {
 }
 
 bool if_GameEnd(){
-
+  if (row_sum[3])
+    return 1;
 }
 
 // =====================================================
@@ -373,6 +374,7 @@ void action_GravityOnPiece() {
       }
     }
     action_LockPiece();
+    action_SumRows();
   } else {
     piece_y++;
     action_AddPieceToGrid();
@@ -387,7 +389,6 @@ void action_LockPiece() {
         virt_grid[x][y] = virt_entity[x][y];   // copy color
         virt_grid[x][y].second = 3;            // locked
         virt_entity[x][y] = Cell{8, 0};        // clear entity cell
-        row_sum[y]++;
       }
     }
   }
@@ -568,8 +569,10 @@ void ReadCommands() {
           piece_y++;
           action_AddPieceToGrid();
         }
-        else
+        else {
           action_LockPiece();
+          action_SumRows();
+        }
       }
 
       line = "";
