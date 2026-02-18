@@ -663,6 +663,7 @@ void setup() {
   action_Start();
   delay(2000);
   action_ClearActualVirtGrid();
+  action_ClearVirtGrid();
   
   // Optional: spawn a piece at startup for testing
   //action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
