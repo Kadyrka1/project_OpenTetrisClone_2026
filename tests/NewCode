@@ -404,7 +404,7 @@ void action_Start() {
   action_SpawnPiece(2, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  int command_line = 0b10011001100010011010;
+  int command_line = 0b100100100110001001100010;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(2, 4, 6, 1, 0);
