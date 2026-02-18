@@ -372,21 +372,22 @@ bool if_GameEnd(){
 
 // Helper function for Start animation
 void action_CommandExecutor(int command_line) {
-    while (comand_line > 0) {
+    while (command_line > 0) {
       delay(33);
       action_RemovePieceFromGrid();
       switch (command_line%4) {
-        condition 0:
+        case 0:
           piece_rotation = (piece_rotation+1)%4;
-        condition 1:
+        case 1:
           piece_x--;
-        condition 2:
+        case 2:
           piece_y++;
-        condition 3:
-          piece_x++
+        case 3:
+          piece_x++;
       }
       command_line >>= 2;
       action_AddPieceToGrid();
+      action_DrawToLED();
   }
   action_LockPiece();
   action_RemovePieceFromGrid();
@@ -402,12 +403,14 @@ void action_Start() {
   // ----Letter "S"----
   action_SpawnPiece(2, 4, 6, 1, 0);
   action_AddPieceToGrid();
+  action_DrawToLED();
   int command_line = 0b10011001100010011010;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(2, 4, 6, 1, 0);
   action_AddPieceToGrid();
-  int command_line = 0b1001100100011001;
+  action_DrawToLED();
+  command_line = 0b1001100100011001;
   action_CommandExecutor(command_line);
   
 }
@@ -662,7 +665,7 @@ void setup() {
   action_ClearActualVirtGrid();
   
   // Optional: spawn a piece at startup for testing
-  action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
+  //action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
   action_DrawToLED();
 }
 
