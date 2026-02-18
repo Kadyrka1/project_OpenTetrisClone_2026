@@ -238,6 +238,24 @@ const byte *pieces[DIFF_PIECES + 1] = {
   piece_T,
   piece_I,
 };
+// =====================================================
+//                     SCORE KEEPING
+// =====================================================
+//As per Tetris BPS 
+//row clears are scored as follows
+const int pts_single = 40;
+const int pts_double = 100;
+const int pts_triple = 300;
+const int pts_quad = 1200;
+
+int rows_deleted; // memory of rows deleted
+
+//Scores
+unsigned int top_score = 0;
+unsigned int score = 0;
+
+//last input memory for hard drop
+int last_Inp;
 
 // =====================================================
 //                   Virtual Grid Funktions
@@ -498,6 +516,8 @@ int action_ClearFilledRowsAndDrop() {
   const int FULL = W; // 10
   int cleared = 0;
 
+  int Current_rows_del;//For score keeping
+
   // work bottom -> top in visible area
   for (int i = H - 1; i >= 0; --i) {
     if (row_sum[i] == FULL) {
@@ -524,10 +544,43 @@ int action_ClearFilledRowsAndDrop() {
       i++;
     }
   }
-
+  rows_deleted = Current_rows_del;//total number of rows deleted for this clearing
   return cleared;
 }
 
+// ---------------- SCORE KEEPING ----------------
+void action_updateScore(){
+  if (!rows_deleted){//only check if not zero
+  switch (rows_deleted){
+    case 1://if only one row deleted
+      score+=pts_single;
+      break;
+    case 2://2 rows deleted
+      score+=pts_double;
+      break;
+    case 3:
+      score+=pts_triple;
+      break;
+    case 4:
+      score+=pts_quad;
+      break;
+    default:
+      //greated than 4 somehow cap at 4
+      score+=pts_quad;
+      break;
+    }
+    rows_deleted = 0; //the reset the number of rows deleted
+  }
+
+  //write out score
+  Serial.println("Score Upadated: ");
+  Serial.println(score);
+
+  if (score>top_score){//update top score
+    top_score = score;
+  }
+
+}
 
 // ---------------- GRID ----------------
 
