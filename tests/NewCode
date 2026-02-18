@@ -277,6 +277,13 @@ void action_ClearVirtGrid() {
   }
 }
 
+void action_ClearActualVirtGrid() {
+    for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++)
+      virt_grid[x][y] = Cell{8, 0};
+  }
+}
+
 // Helper function: Remove current piece from the grid
 void action_RemovePieceFromGrid() {
   const byte *piece = pieces[piece_id] + (piece_rotation * PIECE_SIZE);
@@ -366,6 +373,7 @@ bool if_GameEnd(){
 // Helper function for Start animation
 void action_CommandExecutor(int command_line) {
     while (comand_line > 0) {
+      delay(33);
       action_RemovePieceFromGrid();
       switch (command_line%4) {
         condition 0:
@@ -648,6 +656,10 @@ void setup() {
 
   action_ClearVirtGrid();
   action_DefineVirtGrid();
+
+  action_Start();
+  delay(2000);
+  action_ClearActualVirtGrid();
   
   // Optional: spawn a piece at startup for testing
   action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
