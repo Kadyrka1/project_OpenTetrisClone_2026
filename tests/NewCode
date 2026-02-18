@@ -384,6 +384,7 @@ void action_GravityOnPiece() {
     }
     action_LockPiece();
     action_SumRows();
+    action_ClearFilledRows();
   } else {
     piece_y++;
     action_AddPieceToGrid();
@@ -392,12 +393,15 @@ void action_GravityOnPiece() {
 
 
 void action_SumRows() {
-  for (int x = 0; x < VIRTUAL_W; x++) {
-    for (int y = 0; y < VIRTUAL_H; y++) {
-      if (virt_entity[x][y].second != 0) {
-        row_sum[y] += virt_entity[x][y].second;
-      }
+  action_Clear_row_sum();
+
+  // Sum ONLY the visible 10x10 area (virtual x: 3..12, y: 3..12)
+  for (int vy = CROP; vy < CROP + H; vy++) {
+    int sum = 0;
+    for (int vx = CROP; vx < CROP + W; vx++) {
+      if (virt_grid[vx][vy].second == 3) sum += 1; // count locked blocks
     }
+    row_sum[vy - CROP] = sum; // store as 0..9
   }
 }
 
@@ -438,17 +442,24 @@ void action_SpawnPiece() {
 }
 
 void action_ClearFilledRows() {
-  for (int i = 0; i < H; ++i) 
-    if (row_sum == 30) { // condition for the row to be filled
+  // full row = 10 locked blocks in the visible area
+  const int FULL = W; // 10
 
-      // clearing the row in the virtual grid
-      for (int x = 0; x < W; ++x)
-        virt_grid[x][y] = Cell{8, 0};
+  for (int i = 0; i < H; ++i) {
+    if (row_sum[i] == FULL) {
+      int vy = CROP + i; // translate visible row index -> virtual y
+
+      // clear that row in the visible columns
+      for (int vx = CROP; vx < CROP + W; ++vx) {
+        virt_grid[vx][vy] = Cell{8, 0};
+      }
+
       row_sum[i] = 0;
-  }
-  // Not yet writen
-  //action_GravityOnGrid();
 
+      // OPTIONAL (later): drop everything above down by 1
+      // action_GravityOnGrid(vy);
+    }
+  }
 }
 
 
