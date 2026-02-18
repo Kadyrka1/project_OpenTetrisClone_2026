@@ -522,7 +522,7 @@ void ReadCommands() {
   while (Serial.available()) {
     char c = Serial.read();
 
-    if (c == '\r') continue;
+    if (c == '\r'){continue;}
 
     if (c == '\n') {
       line.trim();
@@ -556,40 +556,42 @@ void ReadCommands() {
       else if (line.startsWith("e") || line.startsWith("E")) {
         action_RemovePieceFromGrid();
         if(!if_Collision(piece_x, piece_y, (piece_rotation +1)%4)) {
-          piece_rotation = (piece_rotation +1)%4;
+          piece_rotation = (piece_rotation +1)%4;  
         }
         action_AddPieceToGrid();
       }
 
       // movement of the piece
-      else if (line.startsWith("a") || line.startsWith("A")) {
+      else if (line.startsWith("a") || line.startsWith("A")) { //left
         action_RemovePieceFromGrid();
         if(!if_Collision(piece_x -1, piece_y, piece_rotation)) {
-          piece_x--;
+          piece_x--;//left
         }
         action_AddPieceToGrid();
       }
-      else if (line.startsWith("d") || line.startsWith("D")) {
+      else if (line.startsWith("d") || line.startsWith("D")) {//right
         action_RemovePieceFromGrid();
         if(!if_Collision(piece_x +1, piece_y, piece_rotation)) {
-          piece_x++;
+          piece_x++;//right
         }
         action_AddPieceToGrid();
       }
-      else if (line.startsWith("s") || line.startsWith("S")) {
+      else if (line.startsWith("s") || line.startsWith("S")) {//down
         action_RemovePieceFromGrid();
         if(!if_Collision(piece_x, piece_y +1, piece_rotation)) {
           piece_y++;
-          action_AddPieceToGrid();
         }
-        else {
+        action_AddPieceToGrid();
+      }
+        
+      else { // no input
+          action_AddPieceToGrid();
           action_LockPiece();
           action_SumRows();
-        }
+          line = "";   
+          }
       }
 
-      line = "";
-    }
     else {
       line += c;
     }
