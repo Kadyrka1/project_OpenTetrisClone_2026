@@ -355,6 +355,8 @@ bool if_Collision(int new_x, int new_y, int new_rotation) {
 bool if_GameEnd(){
   if (row_sum[3])
     return 1;
+  else 
+    return 0;
 }
 
 // =====================================================
