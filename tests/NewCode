@@ -363,6 +363,47 @@ bool if_GameEnd(){
 //                   ACTION Functions
 // =====================================================
 
+// Helper function for Start animation
+void action_CommandExecutor(int command_line) {
+    while (comand_line > 0) {
+      action_RemovePieceFromGrid();
+      switch (command_line%4) {
+        condition 0:
+          piece_rotation = (piece_rotation+1)%4;
+        condition 1:
+          piece_x--;
+        condition 2:
+          piece_y++;
+        condition 3:
+          piece_x++
+      }
+      command_line >>= 2;
+      action_AddPieceToGrid();
+  }
+  action_LockPiece();
+  action_RemovePieceFromGrid();
+}
+
+void action_Start() {
+
+  // 00 == rotation
+  // 01 == left
+  // 10 == down 
+  // 11 == right
+
+  // ----Letter "S"----
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  int command_line = 0b10011001100010011010;
+  action_CommandExecutor(command_line);
+
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  int command_line = 0b1001100100011001;
+  action_CommandExecutor(command_line);
+  
+}
+
 void action_GravityOnPiece() {
   // save previous entity grid
   for (int x = 0; x < VIRTUAL_W; x++) {
@@ -419,15 +460,15 @@ void clearEntity() {
   }
 }
 
-void action_SpawnPiece() {
+void action_SpawnPiece(int color, int id, int x, int y, int rotation) {
   clearEntity();
 
-  piece_colour = random(0, 8);
-  piece_id = random(1, DIFF_PIECES + 1);
+  piece_colour = color;
+  piece_id = id;
 
-  piece_x = 6;
-  piece_y = 3;           // better: spawn near top of visible area
-  piece_rotation = 0;
+  piece_x = x;
+  piece_y = y;           // better: spawn near top of visible area
+  piece_rotation = rotation;
 
   action_AddPieceToGrid();
 
@@ -541,7 +582,7 @@ void ReadCommands() {
 
       // New command to spawn a piece
       else if (line.startsWith("spawnPiece")) {
-        action_SpawnPiece();
+        action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
         Serial.println("Piece spawned");
       }
 
@@ -609,7 +650,7 @@ void setup() {
   action_DefineVirtGrid();
   
   // Optional: spawn a piece at startup for testing
-  action_SpawnPiece();
+  action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
   action_DrawToLED();
 }
 
