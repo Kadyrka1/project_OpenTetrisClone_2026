@@ -64,6 +64,10 @@ Cell virt_entity[VIRTUAL_W][VIRTUAL_H];
 Cell virt_entity_prev[VIRTUAL_W][VIRTUAL_H];
 Cell virt_overlap[VIRTUAL_W][VIRTUAL_H];
 
+// array with the sum for each row
+// needed for row fill check
+std::array<int, H> row_sum;
+
 // =====================================================
 //                   SHAPES (16x4 each)
 // =====================================================
@@ -71,11 +75,6 @@ Cell virt_overlap[VIRTUAL_W][VIRTUAL_H];
 const byte empty[] = {0};
 
 const byte piece_I[] = {
-  0, 0, 0, 0,
-  1, 1, 1, 1,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-
   0, 1, 0, 0,
   0, 1, 0, 0,
   0, 1, 0, 0,
@@ -86,141 +85,146 @@ const byte piece_I[] = {
   0, 0, 0, 0,
   0, 0, 0, 0,
 
-  0, 1, 0, 0,
-  0, 1, 0, 0,
-  0, 1, 0, 0,
-  0, 1, 0, 0,
+  0, 0, 1, 0,
+  0, 0, 1, 0,
+  0, 0, 1, 0,
+  0, 0, 1, 0,
+
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+  1, 1, 1, 1,
+  0, 0, 0, 0,
 };
 
 const byte piece_T[] = {
-  1, 1, 1, 0,
-  0, 1, 0, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
-
-  0, 1, 0, 0,
-  1, 1, 0, 0,
-  0, 1, 0, 0,
-  0, 0, 0, 0,
-
   0, 1, 0, 0,
   1, 1, 1, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 0, 0,
   0, 1, 1, 0,
   0, 1, 0, 0,
+
   0, 0, 0, 0,
+  0, 0, 0, 0,
+  1, 1, 1, 0,
+  0, 1, 0, 0,
+
+  0, 0, 0, 0,
+  0, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 1, 0, 0,
 };
 
 const byte piece_L[] = {
   0, 0, 0, 0,
-  1, 1, 1, 0,
-  1, 0, 0, 0,
-  0, 0, 0, 0,
-
-  1, 1, 0, 0,
-  0, 1, 0, 0,
-  0, 1, 0, 0,
-  0, 0, 0, 0,
-
   0, 0, 1, 0,
   1, 1, 1, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 0, 0,
   0, 1, 0, 0,
   0, 1, 1, 0,
+
   0, 0, 0, 0,
+  0, 0, 0, 0,
+  1, 1, 1, 0,
+  1, 0, 0, 0,
+
+  0, 0, 0, 0,
+  1, 1, 0, 0,
+  0, 1, 0, 0,
+  0, 1, 0, 0,
 };
 
 const byte piece_J[] = {
+  0, 0, 0, 0,
   1, 0, 0, 0,
   1, 1, 1, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 1, 0,
   0, 1, 0, 0,
   0, 1, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 0, 0, 0,
   1, 1, 1, 0,
   0, 0, 1, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 0, 0,
   0, 1, 0, 0,
   1, 1, 0, 0,
-  0, 0, 0, 0,
 };
 
 const byte piece_S[] = {
+  0, 0, 0, 0,
   0, 1, 1, 0,
   1, 1, 0, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 0, 0,
   0, 1, 1, 0,
   0, 0, 1, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 1, 0,
   1, 1, 0, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 1, 0, 0,
   0, 1, 1, 0,
   0, 0, 1, 0,
-  0, 0, 0, 0,
 };
 
 const byte piece_Z[] = {
+  0, 0, 0, 0,
   1, 1, 0, 0,
   0, 1, 1, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 0, 1, 0,
   0, 1, 1, 0,
   0, 1, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   1, 1, 0, 0,
   0, 1, 1, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
 
+  0, 0, 0, 0,
   0, 0, 1, 0,
   0, 1, 1, 0,
   0, 1, 0, 0,
-  0, 0, 0, 0,
 };
 
 const byte piece_O[] = {
+  0, 0, 0, 0,
   1, 1, 0, 0,
   1, 1, 0, 0,
   0, 0, 0, 0,
+
+  0, 0, 0, 0,
+  1, 1, 0, 0,
+  1, 1, 0, 0,
+  0, 0, 0, 0,
+
+  0, 0, 0, 0,
+  1, 1, 0, 0,
+  1, 1, 0, 0,
   0, 0, 0, 0,
 
-  1, 1, 0, 0,
-  1, 1, 0, 0,
   0, 0, 0, 0,
-  0, 0, 0, 0,
-
   1, 1, 0, 0,
   1, 1, 0, 0,
-  0, 0, 0, 0,
-  0, 0, 0, 0,
-
-  1, 1, 0, 0,
-  1, 1, 0, 0,
-  0, 0, 0, 0,
   0, 0, 0, 0,
 };
 
@@ -234,6 +238,10 @@ const byte *pieces[DIFF_PIECES + 1] = {
   piece_T,
   piece_I,
 };
+
+// =====================================================
+//                   Virtual Grid Funktions
+// =====================================================
 
 // status 0 == empty spot
 // status 1 == entity
@@ -259,7 +267,6 @@ void action_DefineVirtGrid(){
   // }
 }
 
-
 void action_ClearVirtGrid() {
   for (int x = 0; x < VIRTUAL_W; x++) {
     for (int y = 0; y < VIRTUAL_H; y++) {
@@ -270,12 +277,12 @@ void action_ClearVirtGrid() {
   }
 }
 
-
-void action_FixPiece() { //fix falling piece to not be movable anymore from the entity grid to the virtual grid
-  
-
+void action_ClearActualVirtGrid() {
+    for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++)
+      virt_grid[x][y] = Cell{8, 0};
+  }
 }
-
 
 // Helper function: Remove current piece from the grid
 void action_RemovePieceFromGrid() {
@@ -315,14 +322,24 @@ void action_AddPieceToGrid() {
   }
 }
 
+void action_LockPiece() {
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
+      if (virt_entity[x][y].second != 0) {
+        virt_grid[x][y] = virt_entity[x][y];   // copy color
+        virt_grid[x][y].second = 3;            // locked
+        virt_entity[x][y] = Cell{8, 0};        // clear entity cell
+      }
+    }
+  }
+}
+
 
 // =====================================================
 //                   IF Functions
 // =====================================================
 
-
-
-bool if_VerticalCollision(int new_x, int new_y, int new_rotation) {
+bool if_Collision(int new_x, int new_y, int new_rotation) {
   const byte *piece = pieces[piece_id] + (new_rotation * PIECE_SIZE);
 
   for (int y = 0; y < PIECE_H; y++) {
@@ -342,10 +359,61 @@ bool if_VerticalCollision(int new_x, int new_y, int new_rotation) {
   return false;
 }
 
+bool if_GameEnd(){
+  if (row_sum[3])
+    return 1;
+  else 
+    return 0;
+}
 
 // =====================================================
 //                   ACTION Functions
 // =====================================================
+
+// Helper function for Start animation
+void action_CommandExecutor(int command_line) {
+    while (command_line > 0) {
+      delay(33);
+      action_RemovePieceFromGrid();
+      switch (command_line%4) {
+        case 0:
+          piece_rotation = (piece_rotation+1)%4;
+        case 1:
+          piece_x--;
+        case 2:
+          piece_y++;
+        case 3:
+          piece_x++;
+      }
+      command_line >>= 2;
+      action_AddPieceToGrid();
+      action_DrawToLED();
+  }
+  action_LockPiece();
+  action_RemovePieceFromGrid();
+}
+
+void action_Start() {
+
+  // 00 == rotation
+  // 01 == left
+  // 10 == down 
+  // 11 == right
+
+  // ----Letter "S"----
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_DrawToLED();
+  int command_line = 0b10011001100010011010;
+  action_CommandExecutor(command_line);
+
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_DrawToLED();
+  command_line = 0b1001100100011001;
+  action_CommandExecutor(command_line);
+  
+}
 
 void action_GravityOnPiece() {
   // save previous entity grid
@@ -359,7 +427,7 @@ void action_GravityOnPiece() {
   action_RemovePieceFromGrid();
 
   // test move down
-  if (if_VerticalCollision(piece_x, piece_y + 1, piece_rotation)) {
+  if (if_Collision(piece_x, piece_y + 1, piece_rotation)) {
     // restore previous entity state
     for (int x = 0; x < VIRTUAL_W; x++) {
       for (int y = 0; y < VIRTUAL_H; y++) {
@@ -367,6 +435,9 @@ void action_GravityOnPiece() {
       }
     }
     action_LockPiece();
+    action_SumRows();
+    action_ClearFilledRowsAndDrop();
+    action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
   } else {
     piece_y++;
     action_AddPieceToGrid();
@@ -374,17 +445,24 @@ void action_GravityOnPiece() {
 }
 
 
-void action_LockPiece() {
-  for (int x = 0; x < VIRTUAL_W; x++) {
-    for (int y = 0; y < VIRTUAL_H; y++) {
-      if (virt_entity[x][y].second != 0) {
-        virt_grid[x][y] = virt_entity[x][y];   // copy color
-        virt_grid[x][y].second = 3;            // locked
-        virt_entity[x][y] = Cell{8, 0};        // clear entity cell
-      }
+void action_SumRows() {
+  action_Clear_row_sum();
+
+  // Sum ONLY the visible 10x10 area (virtual x: 3..12, y: 3..12)
+  for (int vy = CROP; vy < CROP + H; vy++) {
+    int sum = 0;
+    for (int vx = CROP; vx < CROP + W; vx++) {
+      if (virt_grid[vx][vy].second == 3) sum += 1; // count locked blocks
     }
+    row_sum[vy - CROP] = sum; // store as 0..9
   }
 }
+
+void action_Clear_row_sum() {
+  for (int i = 0; i < H; ++i)
+    row_sum[i] = 0;
+}
+
 
 void clearEntity() {
   for (int x = 0; x < VIRTUAL_W; x++) {
@@ -394,15 +472,15 @@ void clearEntity() {
   }
 }
 
-void action_SpawnPiece() {
+void action_SpawnPiece(int color, int id, int x, int y, int rotation) {
   clearEntity();
 
-  piece_colour = random(0, 8);
-  piece_id = random(1, DIFF_PIECES + 1);
+  piece_colour = color;
+  piece_id = id;
 
-  piece_x = 6;
-  piece_y = 3;           // better: spawn near top of visible area
-  piece_rotation = 0;
+  piece_x = x;
+  piece_y = y;           // better: spawn near top of visible area
+  piece_rotation = rotation;
 
   action_AddPieceToGrid();
 
@@ -414,6 +492,40 @@ void action_SpawnPiece() {
   Serial.print(piece_y);
   Serial.print(") color: ");
   Serial.println(piece_colour);   // <-- you were missing println
+}
+
+int action_ClearFilledRowsAndDrop() {
+  const int FULL = W; // 10
+  int cleared = 0;
+
+  // work bottom -> top in visible area
+  for (int i = H - 1; i >= 0; --i) {
+    if (row_sum[i] == FULL) {
+      int vy = CROP + i;
+
+      // shift rows above (vy-1 ... CROP) down by 1
+      for (int y = vy; y > CROP; --y) {
+        for (int vx = CROP; vx < CROP + W; ++vx) {
+          virt_grid[vx][y] = virt_grid[vx][y - 1];
+        }
+      }
+
+      // clear the top visible row
+      for (int vx = CROP; vx < CROP + W; ++vx) {
+        virt_grid[vx][CROP] = Cell{8, 0};
+      }
+
+      cleared++;
+
+      // after dropping, you must recompute row sums
+      action_SumRows();
+
+      // re-check same i, because new row content fell into it
+      i++;
+    }
+  }
+
+  return cleared;
 }
 
 
@@ -470,38 +582,92 @@ void drawPixel(int x, int y, int colour) {
 }
 
 // ---------------- COMMAND READER ----------------
+
 void ReadCommands() {
   static String line = "";
 
   while (Serial.available()) {
-    char c = Serial.read();
+    char ch = (char)Serial.read();
 
-    if (c == '\r') continue;
+    if (ch == '\r') continue;
 
-    if (c == '\n') {
+    if (ch == '\n') {
       line.trim();
 
-      // Expect format: drawPixel(x,y,c)
+      // ----------------------------
+      // 1) drawPixel(x,y,c)
+      // ----------------------------
       if (line.startsWith("drawPixel")) {
-        int x,y,c;
-
-        if (sscanf(line.c_str(), "drawPixel(%d,%d,%d)", &x, &y, &c) == 3) {
-          drawPixel(x,y,c);
+        int x, y, col;
+        if (sscanf(line.c_str(), "drawPixel(%d,%d,%d)", &x, &y, &col) == 3) {
+          drawPixel(x, y, col);
           Serial.println("OK");
         } else {
           Serial.println("Format error");
         }
-      }
-      // New command to spawn a piece
-      else if (line.startsWith("spawnPiece")) {
-        action_SpawnPiece();
-        Serial.println("Piece spawned");
+        line = "";
+        continue;
       }
 
-      line = "";
+      // ----------------------------
+      // 2) spawnPiece
+      // ----------------------------
+      if (line.equalsIgnoreCase("spawnPiece")) {
+        action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
+        Serial.println("Piece spawned");
+        line = "";
+        continue;
+      }
+
+      // ----------------------------
+      // 3) Single-letter commands OR multiple letters in one line
+      //    Example: "aaddqes"
+      // ----------------------------
+      for (int i = 0; i < (int)line.length(); i++) {
+        char c = line[i];
+
+        // skip spaces/tabs just in case
+        if (c == ' ' || c == '\t') continue;
+
+        c = (char)tolower((unsigned char)c);
+
+        if (c == 'q') {
+          action_RemovePieceFromGrid();
+          int nr = (piece_rotation + 3) % 4;
+          if (!if_Collision(piece_x, piece_y, nr)) piece_rotation = nr;
+          action_AddPieceToGrid();
+        }
+        else if (c == 'e') {
+          action_RemovePieceFromGrid();
+          int nr = (piece_rotation + 1) % 4;
+          if (!if_Collision(piece_x, piece_y, nr)) piece_rotation = nr;
+          action_AddPieceToGrid();
+        }
+        else if (c == 'a') { // left
+          action_RemovePieceFromGrid();
+          if (!if_Collision(piece_x - 1, piece_y, piece_rotation)) piece_x--;
+          action_AddPieceToGrid();
+        }
+        else if (c == 'd') { // right
+          action_RemovePieceFromGrid();
+          if (!if_Collision(piece_x + 1, piece_y, piece_rotation)) piece_x++;
+          action_AddPieceToGrid();
+        }
+        else if (c == 's') { // down (soft drop one step)
+          action_RemovePieceFromGrid();
+          if (!if_Collision(piece_x, piece_y + 1, piece_rotation)) piece_y++;
+          action_AddPieceToGrid();
+        }
+        // else: ignore unknown characters
+      }
+
+      line = ""; // IMPORTANT: always reset after processing a line
     }
     else {
-      line += c;
+      // keep building the current line
+      // (avoid runaway growth if serial sends garbage)
+      if (line.length() < 64) line += ch;
+      else line = ""; // reset if too long
     }
   }
 }
@@ -517,15 +683,30 @@ void setup() {
   action_DefineVirtGrid();
   
   // Optional: spawn a piece at startup for testing
-  action_SpawnPiece();
+  action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
   action_DrawToLED();
 }
 
 void loop() {
-  action_GravityOnPiece();
-  action_DrawToLED();
+  static unsigned long lastGravity = 0;
+  static unsigned long lastDraw    = 0;
+
+  unsigned long now = millis();
+
+  // 1) read inputs as often as possible
   ReadCommands();
-  delay(1000);
+
+  // 2) gravity tick every 1000ms
+  if (now - lastGravity >= 1000) {
+    lastGravity = now;
+    action_GravityOnPiece();
+  }
+
+  // 3) redraw often (smooth response)
+  if (now - lastDraw >= 20) {     // 50 FPS-ish
+    lastDraw = now;
+    action_DrawToLED();
+  }
 }
 
 
@@ -533,13 +714,16 @@ void loop() {
   action_Start();
   while(!if_GameEnd()){
     for(int i = 0; i < 30; ++i) {
-    // check for User Input
-    if(!if_HorizontalColision() && !if_VerticalCollision*()) {
-       // Execute User Input
+      // check for User Input
+      if(!if_HorizontalColision() && !if_Collision*()) {
+        // Execute User Input
+        action_ClearFilledRowsAndDrop();
+      }
       else
         delay(33);
     } 
     action_GravityOnPiece();
+    action_ClearFilledRowsAndDrop();
   }
   action_GameEnd();
 } */
