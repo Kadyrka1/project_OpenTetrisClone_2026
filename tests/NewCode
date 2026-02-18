@@ -239,6 +239,10 @@ const byte *pieces[DIFF_PIECES + 1] = {
   piece_I,
 };
 
+// =====================================================
+//                   Virtual Grid Funktions
+// =====================================================
+
 // status 0 == empty spot
 // status 1 == entity
 // status 3 == piece locked
@@ -263,7 +267,6 @@ void action_DefineVirtGrid(){
   // }
 }
 
-
 void action_ClearVirtGrid() {
   for (int x = 0; x < VIRTUAL_W; x++) {
     for (int y = 0; y < VIRTUAL_H; y++) {
@@ -273,12 +276,6 @@ void action_ClearVirtGrid() {
     }
   }
 }
-
-void action_Clear_row_sum() {
-  for (int i = 0; i < H; ++i)
-    row_sum[i] = 0;
-}
-
 
 // Helper function: Remove current piece from the grid
 void action_RemovePieceFromGrid() {
@@ -318,12 +315,22 @@ void action_AddPieceToGrid() {
   }
 }
 
+void action_LockPiece() {
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
+      if (virt_entity[x][y].second != 0) {
+        virt_grid[x][y] = virt_entity[x][y];   // copy color
+        virt_grid[x][y].second = 3;            // locked
+        virt_entity[x][y] = Cell{8, 0};        // clear entity cell
+      }
+    }
+  }
+}
+
 
 // =====================================================
 //                   IF Functions
 // =====================================================
-
-
 
 bool if_Collision(int new_x, int new_y, int new_rotation) {
   const byte *piece = pieces[piece_id] + (new_rotation * PIECE_SIZE);
@@ -382,18 +389,6 @@ void action_GravityOnPiece() {
 }
 
 
-void action_LockPiece() {
-  for (int x = 0; x < VIRTUAL_W; x++) {
-    for (int y = 0; y < VIRTUAL_H; y++) {
-      if (virt_entity[x][y].second != 0) {
-        virt_grid[x][y] = virt_entity[x][y];   // copy color
-        virt_grid[x][y].second = 3;            // locked
-        virt_entity[x][y] = Cell{8, 0};        // clear entity cell
-      }
-    }
-  }
-}
-
 void action_SumRows() {
   for (int x = 0; x < VIRTUAL_W; x++) {
     for (int y = 0; y < VIRTUAL_H; y++) {
@@ -403,6 +398,12 @@ void action_SumRows() {
     }
   }
 }
+
+void action_Clear_row_sum() {
+  for (int i = 0; i < H; ++i)
+    row_sum[i] = 0;
+}
+
 
 void clearEntity() {
   for (int x = 0; x < VIRTUAL_W; x++) {
@@ -433,7 +434,6 @@ void action_SpawnPiece() {
   Serial.print(") color: ");
   Serial.println(piece_colour);   // <-- you were missing println
 }
-
 
 void action_ClearFilledRows() {
   for (int i = 0; i < H; ++i) 
