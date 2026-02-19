@@ -304,6 +304,14 @@ void action_ClearVirtGrid() {
   }
 }
 
+void action_ClearOnlyVirtGrid() {
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
+      virt_grid[x][y]      = Cell{8, 0};
+    }
+  }
+}
+
 void action_ClearActualVirtGrid() {
     for (int x = 0; x < VIRTUAL_W; x++) {
     for (int y = 0; y < VIRTUAL_H; y++)
@@ -719,8 +727,7 @@ void ReadCommands() {
           action_AddPieceToGrid();
         }
         else if (c == 'g') { //reset/set
-          btn_pressed=!btn_pressed; 
-          Serial.print("Button status pressed- Status now is:  ");
+          btn_pressed=true; 
           Serial.println(btn_pressed);
         }
         // else: ignore unknown characters
@@ -763,6 +770,7 @@ void PlayGame(){
     action_DrawToLED();
   }
   in_menu = false;
+  btn_pressed = false;
 }
 
 // ---------------- SETUP / LOOP ----------------
@@ -773,6 +781,7 @@ void setup() {
   FastLED.setBrightness(BRIGHTNESS);
   FastLED.clear(true);
   action_ClearVirtGrid();
+  action_ClearOnlyVirtGrid();
   action_DefineVirtGrid();
   action_DrawToLED();
   in_menu = true;
@@ -784,20 +793,16 @@ void loop() {
   ReadCommands();
   if (in_menu && !btn_pressed){
     setup();
-    Serial.println("in_menu and not btn_pressed");
   }
   if (!in_menu && btn_pressed){
     setup();
-    Serial.println(" NOT in_menu and btn_pressed");
   }
   while (in_menu && btn_pressed){
     PlayGame();
-    Serial.println("In MENU and button pressed");
     btn_pressed = false;
+    action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 0, 0);
   }
   while (!in_menu && !btn_pressed){
     PlayGame();
-    Serial.println("not in_menu and not btn_pressed");
   }
 }
-
