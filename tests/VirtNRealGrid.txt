@@ -399,6 +399,7 @@ bool if_GameEnd(){
 // =====================================================
 
 // Helper function for Start animation
+// Helper function for Start animation
 void action_CommandExecutor(int command_line) {
     while (command_line > 0) {
       delay(33);
@@ -436,7 +437,7 @@ void action_StartAnimation() {
   action_SpawnPiece(2, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
-  int command_line = 0b100100100110001001100010;
+  int command_line = 0b1001001001100010011000; 
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(2, 4, 6, 1, 0);
@@ -446,49 +447,109 @@ void action_StartAnimation() {
   action_CommandExecutor(command_line);
 
   // ----Letter "t"----
-  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_SpawnPiece(3, 7, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
-  command_line = 0b10101001101010;
+  command_line = 0b10101010011010;
   action_CommandExecutor(command_line);
 
-  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_SpawnPiece(3, 6, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
   command_line = 0b1001100110;
   action_CommandExecutor(command_line);
 
   // ----Letter "a"----
-  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_SpawnPiece(4, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
-  command_line = 0b101110001001100110;
+  command_line = 0b100110011000101110;
   action_CommandExecutor(command_line);
 
-  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_SpawnPiece(4, 6, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
-  command_line = 0b101110001000101110001001;
+  command_line = 0b011000101110001000101110;
   action_CommandExecutor(command_line);
 
   // ----Letter "r"----
-  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_SpawnPiece(5, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
-  command_line = 0b1011100010111010;
+  command_line = 0b1010111000101110;
   action_CommandExecutor(command_line);
 
   // ----Letter "t"----
-  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_SpawnPiece(6, 7, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
-  command_line = 0b1110111110111110101010;
+  command_line = 0b1010101011111011111011;
   action_CommandExecutor(command_line);
 
-  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_SpawnPiece(6, 6, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
   command_line = 0b11101110111011;
+  action_CommandExecutor(command_line);
+}
+
+void action_LostAnimation () {
+  // ----Letter "L"----
+  action_SpawnPiece(2, 3, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  int command_line = 0b1001100110001001100110;
+  action_CommandExecutor(command_line);
+
+  action_SpawnPiece(2, 7, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b011001100110;
+  action_CommandExecutor(command_line);
+
+  // ----Letter "o"----
+  action_SpawnPiece(3, 7, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b10101001101010;
+  action_CommandExecutor(command_line);
+
+  action_SpawnPiece(3, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b100010100010100010;
+  action_CommandExecutor(command_line);
+
+  action_SpawnPiece(3, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b100110001000;
+  action_CommandExecutor(command_line);
+
+  // ----Letter "s"----
+  action_SpawnPiece(4, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b1000100010111000101110;
+  action_CommandExecutor(command_line);
+
+  action_SpawnPiece(4, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b101000101110;
+  action_CommandExecutor(command_line);
+
+  // ----Letter "t"----
+  action_SpawnPiece(5, 7, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b1010101110101111101111;
+  action_CommandExecutor(command_line);
+
+  action_SpawnPiece(5, 6, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b10111110111011;
   action_CommandExecutor(command_line);
 }
 
@@ -861,8 +922,10 @@ void loop() {
   if (!in_menu && !btn_pressed && if_GameEnd()){
     Serial.println("Game over");
     delay(2000);
-    //Lost animation
-    //delay
+
+    Clear_toStart();
+    action_LostAnimation();
+    delay(4000);
     setup();
   }
 }
