@@ -312,13 +312,6 @@ void action_ClearOnlyVirtGrid() {
   }
 }
 
-void action_ClearActualVirtGrid() {
-    for (int x = 0; x < VIRTUAL_W; x++) {
-    for (int y = 0; y < VIRTUAL_H; y++)
-      virt_grid[x][y] = Cell{8, 0};
-  }
-}
-
 // Helper function: Remove current piece from the grid
 void action_RemovePieceFromGrid() {
   const byte *piece = pieces[piece_id] + (piece_rotation * PIECE_SIZE);
@@ -473,7 +466,7 @@ void action_GravityOnPiece() {
     action_SumRows();
     int cleared_now = action_ClearFilledRowsAndDrop();
     action_updateScore(cleared_now);
-    action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
+    action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 0, 0);
   } else {
     piece_y++;
     action_AddPieceToGrid();
@@ -727,7 +720,8 @@ void ReadCommands() {
           action_AddPieceToGrid();
         }
         else if (c == 'g') { //reset/set
-          btn_pressed=true; 
+          btn_pressed=!btn_pressed; 
+          Serial.print("Button status pressed- Status now is:  ");
           Serial.println(btn_pressed);
         }
         // else: ignore unknown characters
@@ -770,7 +764,6 @@ void PlayGame(){
     action_DrawToLED();
   }
   in_menu = false;
-  btn_pressed = false;
 }
 
 // ---------------- SETUP / LOOP ----------------
@@ -797,7 +790,7 @@ void loop() {
   if (!in_menu && btn_pressed){
     setup();
   }
-  while (in_menu && btn_pressed){
+  if (in_menu && btn_pressed){
     PlayGame();
     btn_pressed = false;
     action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 0, 0);
