@@ -406,12 +406,16 @@ void action_CommandExecutor(int command_line) {
       switch (command_line%4) {
         case 0:
           piece_rotation = (piece_rotation+1)%4;
+          break;
         case 1:
           piece_x--;
+          break;
         case 2:
           piece_y++;
+          break;
         case 3:
           piece_x++;
+          break;
       }
       command_line >>= 2;
       action_AddPieceToGrid();
@@ -440,8 +444,54 @@ void action_Start() {
   action_DrawToLED();
   command_line = 0b1001100100011001;
   action_CommandExecutor(command_line);
-  
+
+  // ----Letter "t"----
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_DrawToLED();
+  int command_line = 0b10101001101010;
+  action_CommandExecutor(command_line);
+
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_DrawToLED();
+  command_line = 0b1001100110;
+  action_CommandExecutor(command_line);
+
+  // ----Letter "a"----
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_DrawToLED();
+  int command_line = 0b101110001001100110;
+  action_CommandExecutor(command_line);
+
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_DrawToLED();
+  command_line = 0b101110001000101110001001;
+  action_CommandExecutor(command_line);
+
+  // ----Letter "r"----
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_DrawToLED();
+  int command_line = 0b1011100010111010;
+  action_CommandExecutor(command_line);
+
+  // ----Letter "t"----
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_DrawToLED();
+  int command_line = 0b1110111110111110101010;
+  action_CommandExecutor(command_line);
+
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_DrawToLED();
+  command_line = 0b11101110111011;
+  action_CommandExecutor(command_line);
 }
+
 
 void action_GravityOnPiece() {
   // save previous entity grid
