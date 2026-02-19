@@ -425,7 +425,7 @@ void action_CommandExecutor(int command_line) {
   action_RemovePieceFromGrid();
 }
 
-void action_Start() {
+void action_StartAnimation() {
 
   // 00 == rotation
   // 01 == left
@@ -436,7 +436,7 @@ void action_Start() {
   action_SpawnPiece(2, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  command_line = 0b1001001001100010011000; 
+  int command_line = 0b100100100110001001100010;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(2, 4, 6, 1, 0);
@@ -446,52 +446,51 @@ void action_Start() {
   action_CommandExecutor(command_line);
 
   // ----Letter "t"----
-  action_SpawnPiece(3, 7, 6, 1, 0);
+  action_SpawnPiece(2, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  int command_line = 0b10101010011010;
+  command_line = 0b10101001101010;
   action_CommandExecutor(command_line);
 
-  action_SpawnPiece(3, 6, 6, 1, 0);
+  action_SpawnPiece(2, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
   command_line = 0b1001100110;
   action_CommandExecutor(command_line);
 
   // ----Letter "a"----
-  action_SpawnPiece(4, 4, 6, 1, 0);
+  action_SpawnPiece(2, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  int command_line = 0b100110011000101110;
+  command_line = 0b101110001001100110;
   action_CommandExecutor(command_line);
 
-  action_SpawnPiece(4, 6, 6, 1, 0);
+  action_SpawnPiece(2, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  command_line = 0b011000101110001000101110;
+  command_line = 0b101110001000101110001001;
   action_CommandExecutor(command_line);
 
   // ----Letter "r"----
-  action_SpawnPiece(5, 4, 6, 1, 0);
+  action_SpawnPiece(2, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  int command_line = 0b1010111000101110;
+  command_line = 0b1011100010111010;
   action_CommandExecutor(command_line);
 
   // ----Letter "t"----
-  action_SpawnPiece(6, 7, 6, 1, 0);
+  action_SpawnPiece(2, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  int command_line = 0b1010101011111011111011;
+  command_line = 0b1110111110111110101010;
   action_CommandExecutor(command_line);
 
-  action_SpawnPiece(6, 6, 6, 1, 0);
+  action_SpawnPiece(2, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
   command_line = 0b11101110111011;
   action_CommandExecutor(command_line);
 }
-
 
 void action_GravityOnPiece() {
   // save previous entity grid
@@ -798,7 +797,7 @@ void PlayGame(){
   static unsigned long lastDraw    = 0;
 
 
-
+  
   // 1) read inputs as often as possible
   ReadCommands();
 
@@ -814,6 +813,16 @@ void PlayGame(){
     action_DrawToLED();
   }
   in_menu = false;
+  
+}
+
+void Clear_toStart(){
+  action_ClearVirtGrid();
+  action_ClearOnlyVirtGrid();
+  action_DefineVirtGrid();
+  row_sum[3] = 0;
+  action_DrawToLED();
+
 }
 
 // ---------------- SETUP / LOOP ----------------
@@ -823,29 +832,37 @@ void setup() {
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
   FastLED.clear(true);
-  action_ClearVirtGrid();
-  action_ClearOnlyVirtGrid();
-  action_DefineVirtGrid();
-  action_DrawToLED();
+  Clear_toStart();
+
   in_menu = true;
   btn_pressed = false;
-
 }
 
 void loop() {
+  
   ReadCommands();
-  if (in_menu && !btn_pressed){
-    setup();
-  }
+  
   if (!in_menu && btn_pressed){
     setup();
   }
   if (in_menu && btn_pressed){
+    action_StartAnimation();
+    delay(2000);
+    Clear_toStart();
     PlayGame();
     btn_pressed = false;
     action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 0, 0);
+    Serial.println("In menu->In game");
+ 
   }
-  while (!in_menu && !btn_pressed){
+  while (!in_menu && !btn_pressed && !if_GameEnd()){
     PlayGame();
+  }
+  if (!in_menu && !btn_pressed && if_GameEnd()){
+    Serial.println("Game over");
+    delay(2000);
+    //Lost animation
+    //delay
+    setup();
   }
 }
