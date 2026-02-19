@@ -670,7 +670,7 @@ void ReadCommands() {
       // 2) spawnPiece
       // ----------------------------
       if (line.equalsIgnoreCase("spawnPiece")) {
-        action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
+        action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 0, 0);
         Serial.println("Piece spawned");
         line = "";
         continue;
@@ -734,30 +734,16 @@ void ReadCommands() {
   }
 }
 
-// ---------------- SETUP / LOOP ----------------
-void setup() {
-  Serial.begin(115200);
-  FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
-  FastLED.setBrightness(BRIGHTNESS);
-  FastLED.clear(true);
+// ----------------------- Play Game -------------------
 
-  action_ClearVirtGrid();
-  action_DefineVirtGrid();
-  /*
-  action_Start();
-  action_ClearVirtGrid();
-  delay(3000);
-  */
-  // Optional: spawn a piece at startup for testing
-  action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
-  action_DrawToLED();
-}
+unsigned long now = millis();
 
-void loop() {
+void PlayGame(){
+
   static unsigned long lastGravity = 0;
   static unsigned long lastDraw    = 0;
 
-  unsigned long now = millis();
+
 
   // 1) read inputs as often as possible
   ReadCommands();
@@ -773,23 +759,39 @@ void loop() {
     lastDraw = now;
     action_DrawToLED();
   }
+  in_menu = false;
 }
 
+// ---------------- SETUP / LOOP ----------------
 
-/* void loop() {
-  action_Start();
-  while(!if_GameEnd()){
-    for(int i = 0; i < 30; ++i) {
-      // check for User Input
-      if(!if_HorizontalColision() && !if_Collision*()) {
-        // Execute User Input
-        action_ClearFilledRowsAndDrop();
-      }
-      else
-        delay(33);
-    } 
-    action_GravityOnPiece();
-    action_ClearFilledRowsAndDrop();
+bool in_menu = true;
+bool btn_pressed = false;
+
+void setup() {
+  Serial.begin(115200);
+  FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+  FastLED.setBrightness(BRIGHTNESS);
+  FastLED.clear(true);
+  action_ClearVirtGrid();
+  action_DefineVirtGrid();
+  action_DrawToLED();
+  in_menu = true;
+}
+
+void loop() {
+  ReadCommands();
+  if (in_menu && !btn_pressed){
+    setup();
   }
-  action_GameEnd();
-} */
+  if (!in_menu && btn_pressed){
+    setup();
+  }
+  while (in_menu && btn_pressed){
+    PlayGame();
+  }
+  while (!in_menu && !btn_pressed){
+    PlayGame();
+  }
+  btn_pressed = false;
+}
+
