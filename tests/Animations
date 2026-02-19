@@ -36,7 +36,7 @@ void action_Start() {
   action_SpawnPiece(2, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  command_line = 0b1001001001100010011000; 
+  int command_line = 0b1001001001100010011000; 
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(2, 4, 6, 1, 0);
@@ -62,7 +62,7 @@ void action_Start() {
   action_SpawnPiece(4, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  int command_line = 0b100110011000101110;
+  command_line = 0b100110011000101110;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(4, 6, 6, 1, 0);
@@ -75,14 +75,14 @@ void action_Start() {
   action_SpawnPiece(5, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  int command_line = 0b1010111000101110;
+  command_line = 0b1010111000101110;
   action_CommandExecutor(command_line);
 
   // ----Letter "t"----
   action_SpawnPiece(6, 7, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  int command_line = 0b1010101011111011111011;
+  command_line = 0b1010101011111011111011;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(6, 6, 6, 1, 0);
@@ -97,7 +97,7 @@ void action_Lost () {
   action_SpawnPiece(2, 3, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  int command_line = 0b1001100110001001100110;
+  command_line = 0b1001100110001001100110;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(2, 7, 6, 1, 0);
@@ -110,7 +110,7 @@ void action_Lost () {
   action_SpawnPiece(3, 7, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  int command_line = 0b10101001101010;
+  command_line = 0b10101001101010;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(3, 4, 6, 1, 0);
@@ -129,7 +129,7 @@ void action_Lost () {
   action_SpawnPiece(4, 4, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  int command_line = 0b1000100010111000101110;
+  command_line = 0b1000100010111000101110;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(4, 4, 6, 1, 0);
@@ -142,7 +142,7 @@ void action_Lost () {
   action_SpawnPiece(5, 7, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  int command_line = 0b1010101110101111101111;
+  command_line = 0b1010101110101111101111;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(5, 6, 6, 1, 0);
