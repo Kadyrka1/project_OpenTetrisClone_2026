@@ -248,11 +248,13 @@ const int pts_double = 100;
 const int pts_triple = 300;
 const int pts_quad = 1200;
 
-int rows_deleted; // memory of rows deleted
+const int LINES_PER_LEVEL = 10;
 
 //Scores
 unsigned int top_score = 0;
 unsigned int score = 0;
+int total_lines_cleared = 0;
+int level = 0;
 
 //last input memory for hard drop
 int last_Inp;
@@ -454,7 +456,8 @@ void action_GravityOnPiece() {
     }
     action_LockPiece();
     action_SumRows();
-    action_ClearFilledRowsAndDrop();
+    int cleared_now = action_ClearFilledRowsAndDrop();
+    action_updateScore(cleared_now);
     action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
   } else {
     piece_y++;
@@ -514,9 +517,7 @@ void action_SpawnPiece(int color, int id, int x, int y, int rotation) {
 
 int action_ClearFilledRowsAndDrop() {
   const int FULL = W; // 10
-  int cleared = 0;
-
-  int Current_rows_del;//For score keeping
+  int cleared = 0;//For score keeping
 
   // work bottom -> top in visible area
   for (int i = H - 1; i >= 0; --i) {
@@ -544,36 +545,35 @@ int action_ClearFilledRowsAndDrop() {
       i++;
     }
   }
-  rows_deleted = Current_rows_del;//total number of rows deleted for this clearing
-  return cleared;
+  return cleared;//total number of rows deleted for this clearing
 }
 
 // ---------------- SCORE KEEPING ----------------
-void action_updateScore(){
-  if (!rows_deleted){//only check if not zero
-  switch (rows_deleted){
+void action_updateScore(int clearedNow){
+  int base = 0;
+  if (clearedNow){//only check if not zero
+
+  // Accumulate lines and update level
+  total_lines_cleared += clearedNow;
+  level = total_lines_cleared / LINES_PER_LEVEL;
+  // Original BPS scoring multiplied by (level + 1)
+  
+  switch (clearedNow){
     case 1://if only one row deleted
-      score+=pts_single;
-      break;
+      base = pts_single; break;
     case 2://2 rows deleted
-      score+=pts_double;
-      break;
+      base = pts_double; break;
     case 3:
-      score+=pts_triple;
-      break;
-    case 4:
-      score+=pts_quad;
-      break;
+      base = pts_triple; break;
     default:
-      //greated than 4 somehow cap at 4
-      score+=pts_quad;
-      break;
+      base = pts_quad;  break; 
     }
-    rows_deleted = 0; //the reset the number of rows deleted
   }
 
+  score += (unsigned long)base * (level + 1);
+
   //write out score
-  Serial.println("Score Upadated: ");
+  Serial.println("Score Updated: ");
   Serial.println(score);
 
   if (score>top_score){//update top score
@@ -735,6 +735,9 @@ void setup() {
   action_ClearVirtGrid();
   action_DefineVirtGrid();
   
+  action_Start();
+  action_ClearVirtGrid();
+  delay(3000);
   // Optional: spawn a piece at startup for testing
   action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
   action_DrawToLED();
