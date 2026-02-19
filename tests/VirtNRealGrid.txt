@@ -258,6 +258,10 @@ int level = 0;
 
 //last input memory for hard drop
 int last_Inp;
+// =====================================================
+//                     GAME CONTROL
+// =====================================================
+bool btn_pressed = false;
 
 // =====================================================
 //                   Virtual Grid Funktions
@@ -711,6 +715,11 @@ void ReadCommands() {
           if (!if_Collision(piece_x, piece_y + 1, piece_rotation)) piece_y++;
           action_AddPieceToGrid();
         }
+        else if (c == 'g') { //reset/set
+          btn_pressed=!btn_pressed; 
+          Serial.print("Button status pressed- Status now is:  ");
+          Serial.println(btn_pressed);
+        }
         // else: ignore unknown characters
       }
 
@@ -734,10 +743,11 @@ void setup() {
 
   action_ClearVirtGrid();
   action_DefineVirtGrid();
-  
+  /*
   action_Start();
   action_ClearVirtGrid();
   delay(3000);
+  */
   // Optional: spawn a piece at startup for testing
   action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 3, 0);
   action_DrawToLED();
