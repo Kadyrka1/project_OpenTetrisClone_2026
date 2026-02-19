@@ -261,7 +261,10 @@ int last_Inp;
 // =====================================================
 //                     GAME CONTROL
 // =====================================================
-bool btn_pressed = false;
+
+bool in_menu = true;
+bool btn_pressed = true;
+
 
 // =====================================================
 //                   Virtual Grid Funktions
@@ -736,10 +739,10 @@ void ReadCommands() {
 
 // ----------------------- Play Game -------------------
 
-unsigned long now = millis();
+
 
 void PlayGame(){
-
+  unsigned long now = millis();
   static unsigned long lastGravity = 0;
   static unsigned long lastDraw    = 0;
 
@@ -764,9 +767,6 @@ void PlayGame(){
 
 // ---------------- SETUP / LOOP ----------------
 
-bool in_menu = true;
-bool btn_pressed = false;
-
 void setup() {
   Serial.begin(115200);
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
@@ -776,22 +776,28 @@ void setup() {
   action_DefineVirtGrid();
   action_DrawToLED();
   in_menu = true;
+  btn_pressed = false;
+
 }
 
 void loop() {
   ReadCommands();
   if (in_menu && !btn_pressed){
     setup();
+    Serial.println("in_menu and not btn_pressed");
   }
   if (!in_menu && btn_pressed){
     setup();
+    Serial.println(" NOT in_menu and btn_pressed");
   }
   while (in_menu && btn_pressed){
     PlayGame();
+    Serial.println("In MENU and button pressed");
+    btn_pressed = false;
   }
   while (!in_menu && !btn_pressed){
     PlayGame();
+    Serial.println("not in_menu and not btn_pressed");
   }
-  btn_pressed = false;
 }
 
