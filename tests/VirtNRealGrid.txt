@@ -47,8 +47,8 @@ int piece_y;
 // =====================================================
 
 // "Virtual" matrix (game logic grid)
-const int VIRTUAL_WIDTH = 16;
-const int VIRTUAL_HEIGHT = 16;
+const int VIRTUAL_W = 16;
+const int VIRTUAL_H = 16;
 
 // Real grid size (LED physical)
 static const int W = 10;
@@ -59,10 +59,10 @@ static const int CROP = 3;
 //virtual grid and others with colour and status  
 using Cell = std::pair<uint8_t, uint8_t>; // {colorIndex, status}
 
-Cell grid_locked[VIRTUAL_WIDTH][VIRTUAL_HEIGHT];
-Cell grid_entity[VIRTUAL_WIDTH][VIRTUAL_HEIGHT];
-Cell grid_entity_prev[VIRTUAL_WIDTH][VIRTUAL_HEIGHT];
-Cell grid_overlap[VIRTUAL_WIDTH][VIRTUAL_HEIGHT];
+Cell grid_locked[VIRTUAL_W][VIRTUAL_H];
+Cell grid_entity[VIRTUAL_W][VIRTUAL_H];
+Cell grid_entity_prev[VIRTUAL_W][VIRTUAL_H];
+Cell grid_overlap[VIRTUAL_W][VIRTUAL_H];
 
 // array with the sum for each row
 // needed for row fill check
@@ -276,22 +276,27 @@ bool btn_pressed = true;
 // status 5 == border
 // any even status == overlap
 
-void action_InitializeBorders(){
+void action_DefineVirtGrid(){
   // visible "walls" should be at x=2 and x=13, y=13 if you want them on LED area
 
-  for (int i = 0; i < VIRTUAL_HEIGHT; ++i) {
+  for (int i = 0; i < VIRTUAL_H; ++i) {
     grid_locked[2][i]  = {6, 5};   // colour = white, status = border
     grid_locked[13][i] = {6, 5};
   }
 
-  for (int i = 0; i < VIRTUAL_WIDTH; ++i) {
+  for (int i = 0; i < VIRTUAL_W; ++i) {
     grid_locked[i][13] = {6, 5};
   }
+
+  // test row inside visible area (6 is visible)
+  // for (int i = 0; i < VIRTUAL_W; ++i) {
+  //   grid_locked[i][6] = {3, 1};    // colour=3, status=1 (yellow for example)
+  // }
 }
 
 void action_ClearAllGrids() {
-  for (int x = 0; x < VIRTUAL_WIDTH; x++) {
-    for (int y = 0; y < VIRTUAL_HEIGHT; y++) {
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
       grid_entity[x][y]      = Cell{8, 0};
       grid_entity_prev[x][y] = Cell{8, 0};
       grid_overlap[x][y]     = Cell{8, 0};
@@ -300,8 +305,8 @@ void action_ClearAllGrids() {
 }
 
 void action_ClearLockedGrid() {
-  for (int x = 0; x < VIRTUAL_WIDTH; x++) {
-    for (int y = 0; y < VIRTUAL_HEIGHT; y++) {
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
       grid_locked[x][y]      = Cell{8, 0};
     }
   }
@@ -317,7 +322,7 @@ void action_RemovePieceFromGrid() {
         int nx = piece_x + x;
         int ny = piece_y + y;
         
-        if (nx >= 0 && nx < VIRTUAL_WIDTH && ny >= 0 && ny < VIRTUAL_HEIGHT) {
+        if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
           // Clear this cell (set to black/empty)
           grid_entity[nx][ny] = Cell{8, 0};
         }
@@ -336,7 +341,7 @@ void action_AddPieceToGrid() {
         int nx = piece_x + x;
         int ny = piece_y + y;
         
-        if (nx >= 0 && nx < VIRTUAL_WIDTH && ny >= 0 && ny < VIRTUAL_HEIGHT) {
+        if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
           // Set the color and status
           grid_entity[nx][ny] = Cell{(uint8_t)piece_colour, 1};
         }
@@ -346,8 +351,8 @@ void action_AddPieceToGrid() {
 }
 
 void action_LockPiece() {
-  for (int x = 0; x < VIRTUAL_WIDTH; x++) {
-    for (int y = 0; y < VIRTUAL_HEIGHT; y++) {
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
       if (grid_entity[x][y].second != 0) {
         grid_locked[x][y] = grid_entity[x][y];   // copy color
         grid_locked[x][y].second = 3;            // locked
@@ -373,7 +378,7 @@ bool if_Collision(int new_x, int new_y, int new_rotation) {
       int ny = new_y + y;
 
       // outside virtual grid -> collision
-      if (nx < 0 || nx >= VIRTUAL_WIDTH || ny < 0 || ny >= VIRTUAL_HEIGHT) return true;
+      if (nx < 0 || nx >= VIRTUAL_W || ny < 0 || ny >= VIRTUAL_H) return true;
 
       // collides with borders or locked blocks in grid_locked
       if (grid_locked[nx][ny].second != 0) return true;
@@ -401,12 +406,16 @@ void action_CommandExecutor(int command_line) {
       switch (command_line%4) {
         case 0:
           piece_rotation = (piece_rotation+1)%4;
+          break;
         case 1:
           piece_x--;
+          break;
         case 2:
           piece_y++;
+          break;
         case 3:
           piece_x++;
+          break;
       }
       command_line >>= 2;
       action_AddPieceToGrid();
@@ -416,7 +425,7 @@ void action_CommandExecutor(int command_line) {
   action_RemovePieceFromGrid();
 }
 
-void action_Start() {
+void action_StartAnimation() {
 
   // 00 == rotation
   // 01 == left
@@ -435,13 +444,58 @@ void action_Start() {
   action_RenderFrame();
   command_line = 0b1001100100011001;
   action_CommandExecutor(command_line);
-  
+
+  // ----Letter "t"----
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b10101001101010;
+  action_CommandExecutor(command_line);
+
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b1001100110;
+  action_CommandExecutor(command_line);
+
+  // ----Letter "a"----
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b101110001001100110;
+  action_CommandExecutor(command_line);
+
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b101110001000101110001001;
+  action_CommandExecutor(command_line);
+
+  // ----Letter "r"----
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b1011100010111010;
+  action_CommandExecutor(command_line);
+
+  // ----Letter "t"----
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b1110111110111110101010;
+  action_CommandExecutor(command_line);
+
+  action_SpawnPiece(2, 4, 6, 1, 0);
+  action_AddPieceToGrid();
+  action_RenderFrame();
+  command_line = 0b11101110111011;
+  action_CommandExecutor(command_line);
 }
 
 void action_GravityOnPiece() {
   // save previous entity grid
-  for (int x = 0; x < VIRTUAL_WIDTH; x++) {
-    for (int y = 0; y < VIRTUAL_HEIGHT; y++) {
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
       grid_entity_prev[x][y] = grid_entity[x][y];
     }
   }
@@ -452,8 +506,8 @@ void action_GravityOnPiece() {
   // test move down
   if (if_Collision(piece_x, piece_y + 1, piece_rotation)) {
     // restore previous entity state
-    for (int x = 0; x < VIRTUAL_WIDTH; x++) {
-      for (int y = 0; y < VIRTUAL_HEIGHT; y++) {
+    for (int x = 0; x < VIRTUAL_W; x++) {
+      for (int y = 0; y < VIRTUAL_H; y++) {
         grid_entity[x][y] = grid_entity_prev[x][y];
       }
     }
@@ -489,8 +543,8 @@ void action_ClearRowSum() {
 
 
 void clearEntity() {
-  for (int x = 0; x < VIRTUAL_WIDTH; x++) {
-    for (int y = 0; y < VIRTUAL_HEIGHT; y++) {
+  for (int x = 0; x < VIRTUAL_W; x++) {
+    for (int y = 0; y < VIRTUAL_H; y++) {
       grid_entity[x][y] = Cell{8, 0};
     }
   }
@@ -743,7 +797,7 @@ void PlayGame(){
   static unsigned long lastDraw    = 0;
 
 
-
+  
   // 1) read inputs as often as possible
   ReadCommands();
 
@@ -759,6 +813,16 @@ void PlayGame(){
     action_RenderFrame();
   }
   in_menu = false;
+  
+}
+
+void Clear_toStart(){
+  action_ClearAllGrids();
+  action_ClearLockedGrid();
+  action_DefineVirtGrid();
+  row_sum[3] = 0;
+  action_RenderFrame();
+
 }
 
 // ---------------- SETUP / LOOP ----------------
@@ -768,34 +832,37 @@ void setup() {
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
   FastLED.clear(true);
-  action_ClearAllGrids();
-  action_ClearLockedGrid();
-  action_InitializeBorders();
-  action_RenderFrame();
+  Clear_toStart();
+
   in_menu = true;
   btn_pressed = false;
-
 }
 
 void loop() {
   
   ReadCommands();
-  if (in_menu && !btn_pressed){
-    setup();
-  }
+  
   if (!in_menu && btn_pressed){
     setup();
   }
   if (in_menu && btn_pressed){
+    action_StartAnimation();
+    delay(2000);
+    Clear_toStart();
     PlayGame();
     btn_pressed = false;
     action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 0, 0);
+    Serial.println("In menu->In game");
+ 
   }
   while (!in_menu && !btn_pressed && !if_GameEnd()){
     PlayGame();
   }
   if (!in_menu && !btn_pressed && if_GameEnd()){
-    delay(4000);
+    Serial.println("Game over");
+    delay(2000);
+    //Lost animation
+    //delay
     setup();
   }
 }
