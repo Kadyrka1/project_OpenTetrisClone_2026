@@ -49,7 +49,7 @@ void action_Start() {
   action_SpawnPiece(3, 7, 6, 1, 0);
   action_AddPieceToGrid();
   action_DrawToLED();
-  int command_line = 0b10101010011010;
+  command_line = 0b10101010011010;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(3, 6, 6, 1, 0);
