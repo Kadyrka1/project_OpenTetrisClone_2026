@@ -988,6 +988,52 @@ void joystickLoopGame() {
   }
 }
 
+// ---------------- BUTTON (COPY OF WORKING TEST) ----------------
+
+const int BUTTON_PIN = 25;
+const unsigned long debounceDelay = 100;
+
+int button_pressed() {
+  static bool lastStableState = HIGH;
+  static bool lastReading = HIGH;
+  static unsigned long lastDebounceTime = 0;
+
+  bool reading = digitalRead(BUTTON_PIN);
+
+  if (reading != lastReading) {
+    lastDebounceTime = millis();
+    lastReading = reading;
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (reading != lastStableState) {
+      lastStableState = reading;
+
+      if (lastStableState == LOW)
+        return 1;   // pressed
+      else
+        return -1;  // released
+    }
+  }
+
+  return 0;  // no event
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+}
+
+void loop() {
+  int state = button_pressed();
+
+  if (state == 1)
+    Serial.println("BUTTON PRESSED");
+
+  if (state == -1)
+    Serial.println("BUTTON RELEASED");
+}
+
 
 void PlayGame(){
   unsigned long now = millis();
