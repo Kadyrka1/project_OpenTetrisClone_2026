@@ -454,20 +454,20 @@ void action_StartAnimation() {
   action_SpawnPiece(3, 6, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
-  command_line = 0b10101010011010;
+  command_line = 0b1010011010011010;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(3, 5, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
-  command_line = 0b1001100110;
+  command_line = 0b0110011010;
   action_CommandExecutor(command_line);
 
   // ----Letter "a"----
   action_SpawnPiece(4, 3, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
-  command_line = 0b100110011000101110;
+  command_line = 0b011010011000101110;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(4, 5, 6, 1, 0);
@@ -487,7 +487,7 @@ void action_StartAnimation() {
   action_SpawnPiece(6, 6, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
-  command_line = 0b1010101011111011111011;
+  command_line = 0b10101010111011111011;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(6, 5, 6, 1, 0);
@@ -508,14 +508,14 @@ void action_LostAnimation () {
   action_SpawnPiece(2, 6, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
-  command_line = 0b011001100110;
+  command_line = 0b01100110011001;
   action_CommandExecutor(command_line);
 
   // ----Letter "o"----
   action_SpawnPiece(3, 6, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
-  command_line = 0b10101001101010;
+  command_line = 0b1010011010011010;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(3, 3, 6, 1, 0);
@@ -547,7 +547,7 @@ void action_LostAnimation () {
   action_SpawnPiece(5, 6, 6, 1, 0);
   action_AddPieceToGrid();
   action_RenderFrame();
-  command_line = 0b1010101110101111101111;
+  command_line = 0b10101011101011111011;
   action_CommandExecutor(command_line);
 
   action_SpawnPiece(5, 5, 6, 1, 0);
