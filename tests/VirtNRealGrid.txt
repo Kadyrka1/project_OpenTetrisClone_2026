@@ -240,14 +240,14 @@ const byte piece_O[] = {
 };
 
 const byte *pieces[DIFF_PIECES + 1] = {
-empty,
-piece_Z, //red
-piece_S, //green 
-piece_J, //blue
-piece_O, //yellow
-piece_T, //purple/magenta
-piece_I, //cyan
-piece_L, //orange
+  empty,
+  piece_Z, //red
+  piece_S, //green 
+  piece_J, //blue
+  piece_O, //yellow
+  piece_T, //purple/magenta
+  piece_I, //cyan
+  piece_L, //orange
 };
 // =====================================================
 //                     SCORE KEEPING
@@ -299,10 +299,6 @@ void action_DefineVirtGrid(){
     grid_locked[i][13] = {6, 5};
   }
 
-  // test row inside visible area (6 is visible)
-  // for (int i = 0; i < VIRTUAL_W; ++i) {
-  //   grid_locked[i][6] = {3, 1};    // colour=3, status=1 (yellow for example)
-  // }
 }
 
 void action_ClearAllGrids() {
@@ -905,7 +901,7 @@ void ReadCommands() {
 
 // ----------------------- Play Game -------------------
 
-// ---------------- JOYSTICK (COPY OF WORKING TEST) ----------------
+// ---------------- JOYSTICK  ----------------
 const int UP_PIN    = 27;
 const int DOWN_PIN  = 14;
 const int LEFT_PIN  = 16;
@@ -986,7 +982,7 @@ void joystickLoopGame() {
 
 // ---------------- BUTTON (COPY OF WORKING TEST) ----------------
 
-const int BUTTON_PIN = 25;
+const int BUTTON_PIN = 26;
 const unsigned long debounceDelay = 100;
 
 int button_pressed() {
@@ -1007,6 +1003,7 @@ int button_pressed() {
 
       if (lastStableState == LOW){
         return 1;   // pressed
+        
       }
       else
         return -1;  // released
@@ -1019,6 +1016,9 @@ int button_pressed() {
 
 
 void PlayGame(){
+
+  
+
   unsigned long now = millis();
   static unsigned long lastGravity = 0;
   static unsigned long lastDraw    = 0;
@@ -1026,6 +1026,12 @@ void PlayGame(){
   // 1) read inputs as often as possible
   ReadCommands();
   joystickLoopGame();
+  int status_btn = button_pressed();
+  if (status_btn){
+    btn_pressed = !btn_pressed;
+    Serial.print("Button status pressed- Status now is:  ");
+    Serial.println(btn_pressed);
+  }
 
   // 2) gravity tick every 1000ms
   if (now - lastGravity >= 1000) {
@@ -1090,8 +1096,11 @@ void loop() {
   
   ReadCommands();
 
-  if (button_pressed() ==1){
+  int status_btn = button_pressed();
+  if (status_btn){
     btn_pressed = !btn_pressed;
+    Serial.print("Button status pressed- Status now is:  ");
+    Serial.println(btn_pressed);
   }
   
 
@@ -1099,14 +1108,14 @@ void loop() {
     setup();
   }
   if (in_menu && btn_pressed){
+    btn_pressed = false;
     action_StartAnimation();
     delay(2000);
     Clear_toStart();
-    PlayGame();
-    btn_pressed = false;
     int NewPiece = random(1, DIFF_PIECES + 1);
     action_SpawnPiece(NewPiece - 1, NewPiece, 6, 0, 0);//colour piece_id, x, y, rotation
     Serial.println("In menu->In game");
+    PlayGame();
  
   }
   while (!in_menu && !btn_pressed && !if_GameEnd()){
