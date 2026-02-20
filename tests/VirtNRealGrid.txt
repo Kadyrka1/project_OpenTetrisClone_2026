@@ -15,17 +15,21 @@
 CRGB leds[NUM_LEDS];
 
 // ---------------- 9 COLORS ----------------
+
+
 const CRGB COLORS[9] = {
-  CRGB(255,0,0),
-  CRGB(0,255,0),
-  CRGB(0,0,255),
-  CRGB(255,255,0),
-  CRGB(255,0,255),
-  CRGB(0,255,255),
-  CRGB(255,255,255),
-  CRGB(255,128,0),
-  CRGB(0,0,0)
+CRGB(255,0,0), //Red
+CRGB(0,255,0), //green
+CRGB(0,0,255), //Blue
+CRGB(255,255,0), //Yellow
+CRGB(255,0,255), //Magenta
+CRGB(0,255,255), //Cyan
+CRGB(255,128,0),//Orange
+CRGB(255,255,255),//White
+CRGB(0,0,0)//Black (off)
 };
+
+
 
 int piece_colour = 0;
 
@@ -229,14 +233,14 @@ const byte piece_O[] = {
 };
 
 const byte *pieces[DIFF_PIECES + 1] = {
-  empty,
-  piece_S,
-  piece_Z,
-  piece_L,
-  piece_J,
-  piece_O,
-  piece_T,
-  piece_I,
+empty,
+piece_Z, //red
+piece_S, //green 
+piece_J, //blue
+piece_O, //yellow
+piece_T, //purple/magenta
+piece_I, //cyan
+piece_L, //orange
 };
 // =====================================================
 //                     SCORE KEEPING
@@ -388,7 +392,7 @@ bool if_Collision(int new_x, int new_y, int new_rotation) {
 }
 
 bool if_GameEnd(){
-  if (row_sum[3])
+  if (row_sum[1])
     return 1;
   else 
     return 0;
@@ -576,7 +580,8 @@ void action_GravityOnPiece() {
     action_SumRows();
     int cleared_now = action_ClearFilledRowsAndDrop();
     action_updateScore(cleared_now);
-    action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 0, 0);
+    int NewPiece = random(1, DIFF_PIECES + 1);
+    action_SpawnPiece(NewPiece - 1, NewPiece, 6, 0, 0);
   } else {
     piece_y++;
     action_AddPieceToGrid();
@@ -784,7 +789,9 @@ void ReadCommands() {
       // 2) spawnPiece
       // ----------------------------
       if (line.equalsIgnoreCase("spawnPiece")) {
-        action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 0, 0);
+        int NewPiece = random(1, DIFF_PIECES + 1);
+
+        action_SpawnPiece(NewPiece - 1, NewPiece , 6, 0, 0);
         Serial.println("Piece spawned");
         line = "";
         continue;
@@ -912,7 +919,8 @@ void loop() {
     Clear_toStart();
     PlayGame();
     btn_pressed = false;
-    action_SpawnPiece(random(0,8), random(1, DIFF_PIECES + 1), 6, 0, 0);
+    int NewPiece = random(1, DIFF_PIECES + 1);
+    action_SpawnPiece(NewPiece - 1, NewPiece, 6, 0, 0);//colour piece_id, x, y, rotation
     Serial.println("In menu->In game");
  
   }
