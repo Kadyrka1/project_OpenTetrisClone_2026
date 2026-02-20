@@ -395,7 +395,7 @@ bool if_Collision(int new_x, int new_y, int new_rotation) {
 }
 
 bool if_GameEnd(){
-  if (row_sum[1])
+  if (row_sum[0])
     return 1;
   else 
     return 0;
@@ -980,7 +980,7 @@ void joystickLoopGame() {
   }
 }
 
-// ---------------- BUTTON (COPY OF WORKING TEST) ----------------
+// ---------------- BUTTON ----------------
 
 const int BUTTON_PIN = 26;
 const unsigned long debounceDelay = 100;
@@ -1017,8 +1017,6 @@ int button_pressed() {
 
 void PlayGame(){
 
-  
-
   unsigned long now = millis();
   static unsigned long lastGravity = 0;
   static unsigned long lastDraw    = 0;
@@ -1051,7 +1049,7 @@ void Clear_toStart(){
   action_ClearAllGrids();
   action_ClearLockedGrid();
   action_DefineVirtGrid();
-  row_sum[1] = 0;
+  row_sum[0] = 0;
   action_RenderFrame();
 
 }
