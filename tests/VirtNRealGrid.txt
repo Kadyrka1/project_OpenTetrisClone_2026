@@ -40,89 +40,7 @@ CRGB(0,0,0)//Black (off)
 };
 
 
-// ---------------- JOYSTICK CONFIG (known-good) ----------------
-const int UP_PIN    = 27;
-const int DOWN_PIN  = 14;
-const int LEFT_PIN  = 16;
-const int RIGHT_PIN = 17;
 
-const uint32_t debounceMs = 30;
-
-uint8_t lastState = 0xFF;      // last stable state (bitfield)
-uint8_t lastRead  = 0xFF;      // last raw read
-uint32_t lastChangeTime = 0;
-
-uint8_t readButtons() {
-  // pressed = 1, released = 0
-  uint8_t s = 0;
-  if (digitalRead(UP_PIN)    == LOW) s |= (1 << 0);
-  if (digitalRead(DOWN_PIN)  == LOW) s |= (1 << 1);
-  if (digitalRead(LEFT_PIN)  == LOW) s |= (1 << 2);
-  if (digitalRead(RIGHT_PIN) == LOW) s |= (1 << 3);
-  return s;
-}
-
-// returns true when stable state changes; outputs new stable state in outStable
-bool joystickUpdate(uint8_t &outStable) {
-  uint8_t now = readButtons();
-
-  if (now != lastRead) {
-    lastRead = now;
-    lastChangeTime = millis();
-  }
-
-  if ((millis() - lastChangeTime) >= debounceMs && now != lastState) {
-    lastState = now;
-    outStable = lastState;
-    return true;
-  }
-  return false;
-}
-
-// apply actions only on NEW presses (edge), not while held
-void joystickHandleGame() {
-  uint8_t stable;
-  if (!joystickUpdate(stable)) return;
-
-  // stable is current pressed bitfield
-  // Compute newly-pressed bits relative to previous stable state:
-  // BUT we already updated lastState above, so we need prev state.
-  // Easiest: store prev inside static here.
-  static uint8_t prevStable = 0;
-  uint8_t pressedEdges = (stable) & (~prevStable);
-  prevStable = stable;
-
-  if (pressedEdges == 0) return;
-
-  // UP -> rotate (like 'e')
-  if (pressedEdges & (1 << 0)) {
-    action_RemovePieceFromGrid();
-    int nr = (piece_rotation + 1) % 4;
-    if (!if_Collision(piece_x, piece_y, nr)) piece_rotation = nr;
-    action_AddPieceToGrid();
-  }
-
-  // DOWN -> 's'
-  if (pressedEdges & (1 << 1)) {
-    action_RemovePieceFromGrid();
-    if (!if_Collision(piece_x, piece_y + 1, piece_rotation)) piece_y++;
-    action_AddPieceToGrid();
-  }
-
-  // LEFT -> 'a'
-  if (pressedEdges & (1 << 2)) {
-    action_RemovePieceFromGrid();
-    if (!if_Collision(piece_x - 1, piece_y, piece_rotation)) piece_x--;
-    action_AddPieceToGrid();
-  }
-
-  // RIGHT -> 'd'
-  if (pressedEdges & (1 << 3)) {
-    action_RemovePieceFromGrid();
-    if (!if_Collision(piece_x + 1, piece_y, piece_rotation)) piece_x++;
-    action_AddPieceToGrid();
-  }
-}
 
 
 
@@ -991,6 +909,84 @@ void ReadCommands() {
 
 // ----------------------- Play Game -------------------
 
+// ---------------- JOYSTICK (COPY OF WORKING TEST) ----------------
+const int UP_PIN    = 27;
+const int DOWN_PIN  = 14;
+const int LEFT_PIN  = 16;
+const int RIGHT_PIN = 17;
+
+const uint32_t debounceMs = 30;
+
+uint8_t lastState = 0xFF;      // last stable state (bitfield)
+uint8_t lastRead  = 0xFF;      // last raw read
+uint32_t lastChangeTime = 0;
+
+uint8_t readButtons() {
+  // pressed = 1, released = 0 (more intuitive)
+  uint8_t s = 0;
+  if (digitalRead(UP_PIN)    == LOW) s |= (1 << 0);
+  if (digitalRead(DOWN_PIN)  == LOW) s |= (1 << 1);
+  if (digitalRead(LEFT_PIN)  == LOW) s |= (1 << 2);
+  if (digitalRead(RIGHT_PIN) == LOW) s |= (1 << 3);
+  return s;
+}
+
+// THIS replaces printState(): maps stable state -> game actions
+void applyJoystickToGame(uint8_t s) {
+  // If you want "NONE" debug, uncomment:
+  // if (s == 0) { Serial.println("NONE"); return; }
+
+  // IMPORTANT: do the same as your serial commands:
+  // UP = rotate (clockwise)
+  if (s & (1 << 0)) {
+    action_RemovePieceFromGrid();
+    int nr = (piece_rotation + 1) % 4;
+    if (!if_Collision(piece_x, piece_y, nr)) piece_rotation = nr;
+    action_AddPieceToGrid();
+  }
+
+  // DOWN = 's' (soft drop one step)
+  if (s & (1 << 1)) {
+    action_RemovePieceFromGrid();
+    if (!if_Collision(piece_x, piece_y + 1, piece_rotation)) piece_y++;
+    action_AddPieceToGrid();
+  }
+
+  // LEFT = 'a'
+  if (s & (1 << 2)) {
+    action_RemovePieceFromGrid();
+    if (!if_Collision(piece_x - 1, piece_y, piece_rotation)) piece_x--;
+    action_AddPieceToGrid();
+  }
+
+  // RIGHT = 'd'
+  if (s & (1 << 3)) {
+    action_RemovePieceFromGrid();
+    if (!if_Collision(piece_x + 1, piece_y, piece_rotation)) piece_x++;
+    action_AddPieceToGrid();
+  }
+
+  Serial.print("JOY state: "); Serial.println(lastState, BIN);
+}
+
+// Call this frequently (like your loop in joystick test)
+void joystickLoopGame() {
+  uint8_t now = readButtons();
+
+  // debounce: wait until reading stays the same for debounceMs
+  if (now != lastRead) {
+    lastRead = now;
+    lastChangeTime = millis();
+  }
+
+  if ((millis() - lastChangeTime) >= debounceMs && now != lastState) {
+    lastState = now;
+
+    // Your test did: printState(lastState);
+    // Now we do:
+    applyJoystickToGame(lastState);
+  }
+}
 
 
 void PlayGame(){
@@ -1000,7 +996,7 @@ void PlayGame(){
  
   // 1) read inputs as often as possible
   ReadCommands();
-  joystickHandleGame();
+  joystickLoopGame();
 
   // 2) gravity tick every 1000ms
   if (now - lastGravity >= 1000) {
@@ -1030,16 +1026,15 @@ void Clear_toStart(){
 void setup() {
   Serial.begin(115200);
 
-  // ---------JOYSTICK SETUP-----------
   pinMode(UP_PIN,    INPUT_PULLUP);
   pinMode(DOWN_PIN,  INPUT_PULLUP);
   pinMode(LEFT_PIN,  INPUT_PULLUP);
   pinMode(RIGHT_PIN, INPUT_PULLUP);
 
-  // init stable state once
-  lastState = readButtons();
-  lastRead  = lastState;
-  lastChangeTime = millis();
+  // keep these EXACT initial values like your working test
+  lastState = 0xFF;
+  lastRead  = 0xFF;
+  lastChangeTime = 0;
 
   //---------LED SETUP-----------
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
