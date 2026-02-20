@@ -41,7 +41,18 @@ CRGB(0,0,0)//Black (off)
 
 
 
+// ---------------- JOYSTICK CONFIG ----------------
+const int UP_PIN    = 27;
+const int DOWN_PIN  = 14;
+const int LEFT_PIN  = 16;
+const int RIGHT_PIN = 17;
 
+const uint32_t JOY_DEBOUNCE_MS = 30;
+
+// pressed=1 bits: 0=UP,1=DOWN,2=LEFT,3=RIGHT
+uint8_t joy_lastStable = 0;
+uint8_t joy_lastRead   = 0;
+uint32_t joy_lastChangeTime = 0;
 
 
 // Tetriminos
@@ -909,6 +920,64 @@ void ReadCommands() {
 
 // ----------------------- Play Game -------------------
 
+uint8_t readJoystickButtons() {
+  uint8_t s = 0;
+  if (digitalRead(UP_PIN)    == LOW) s |= (1 << 0);
+  if (digitalRead(DOWN_PIN)  == LOW) s |= (1 << 1);
+  if (digitalRead(LEFT_PIN)  == LOW) s |= (1 << 2);
+  if (digitalRead(RIGHT_PIN) == LOW) s |= (1 << 3);
+  return s;
+}
+
+// returns newly pressed buttons only (edge-triggered), debounced
+uint8_t joystickPressedEdges() {
+  uint8_t now = readJoystickButtons();
+
+  if (now != joy_lastRead) {
+    joy_lastRead = now;
+    joy_lastChangeTime = millis();
+  }
+
+  if ((millis() - joy_lastChangeTime) >= JOY_DEBOUNCE_MS && now != joy_lastStable) {
+    uint8_t prev = joy_lastStable;
+    joy_lastStable = now;
+    return (joy_lastStable) & (~prev); // bits that went 0->1
+  }
+  return 0;
+}
+
+void ApplyJoystickActions(uint8_t pressedEdges) {
+  if (pressedEdges == 0) return;
+
+  // UP = rotate (like 'e')
+  if (pressedEdges & (1 << 0)) {
+    action_RemovePieceFromGrid();
+    int nr = (piece_rotation + 1) % 4;
+    if (!if_Collision(piece_x, piece_y, nr)) piece_rotation = nr;
+    action_AddPieceToGrid();
+  }
+
+  // DOWN = 's' (soft drop one step)
+  if (pressedEdges & (1 << 1)) {
+    action_RemovePieceFromGrid();
+    if (!if_Collision(piece_x, piece_y + 1, piece_rotation)) piece_y++;
+    action_AddPieceToGrid();
+  }
+
+  // LEFT = 'a'
+  if (pressedEdges & (1 << 2)) {
+    action_RemovePieceFromGrid();
+    if (!if_Collision(piece_x - 1, piece_y, piece_rotation)) piece_x--;
+    action_AddPieceToGrid();
+  }
+
+  // RIGHT = 'd'
+  if (pressedEdges & (1 << 3)) {
+    action_RemovePieceFromGrid();
+    if (!if_Collision(piece_x + 1, piece_y, piece_rotation)) piece_x++;
+    action_AddPieceToGrid();
+  }
+}
 
 
 void PlayGame(){
@@ -918,6 +987,8 @@ void PlayGame(){
  
   // 1) read inputs as often as possible
   ReadCommands();
+  uint8_t edges = joystickPressedEdges();
+  ApplyJoystickActions(edges);
 
   // 2) gravity tick every 1000ms
   if (now - lastGravity >= 1000) {
@@ -945,7 +1016,17 @@ void Clear_toStart(){
 // ---------------- SETUP / LOOP ----------------
 
 void setup() {
+  pinMode(UP_PIN,    INPUT_PULLUP);
+  pinMode(DOWN_PIN,  INPUT_PULLUP);
+  pinMode(LEFT_PIN,  INPUT_PULLUP);
+  pinMode(RIGHT_PIN, INPUT_PULLUP);
+
+  // reset joystick debounce state
+  joy_lastStable = readJoystickButtons();
+  joy_lastRead   = joy_lastStable;
+  joy_lastChangeTime = millis();
   Serial.begin(115200);
+
   //---------LED SETUP-----------
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
