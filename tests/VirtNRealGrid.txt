@@ -1,9 +1,19 @@
 //-----------------------------------------------------------------------------------------------
 //------LIBRARIES----------
-
+//LCD libraries
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h> 
+//grid libraries
 #include <utility> //necessary for use of pairs
 #include <FastLED.h>
 #include <ctype.h>
+
+
+// ---------------- LCD CONFIG ----------------
+LiquidCrystal_I2C lcd(0x27, 20, 4);   // If blank, try 0x3F
+
+unsigned long lastUpdate = 0;
+int counter = 0;
 
 // ---------------- LED CONFIG ----------------
 #define LED_PIN       23
@@ -31,7 +41,7 @@ CRGB(0,0,0)//Black (off)
 
 
 
-int piece_colour = 0;
+
 
 
 // Tetriminos
@@ -45,6 +55,7 @@ int piece_id;
 int piece_rotation;
 int piece_x;
 int piece_y;
+int piece_colour = 0;
 
 // =====================================================
 //             VIRTUAL + REAL MATRIX DIMENSIONS
@@ -401,7 +412,46 @@ bool if_GameEnd(){
 // =====================================================
 //                   ACTION Functions
 // =====================================================
+//--------------LCD Functions------------------
+void updateDisplay(int latestScore, int topScore, bool inMenuState) {
 
+  lcd.clear();
+
+  if (inMenuState) {
+    lcd.setCursor(0,0);
+    lcd.print("=== MAIN MENU ===");
+
+    lcd.setCursor(0,1);
+    lcd.print("Your score: ");
+    lcd.print(latestScore);
+    
+    lcd.setCursor(0,2);
+    lcd.print("Top score: ");
+    lcd.print(topScore);
+
+    lcd.setCursor(0,3);
+    lcd.print("Press to start game");
+  }
+  else {
+
+    lcd.setCursor(0,0);
+    lcd.print("Game Running...");
+
+    lcd.setCursor(0,1);
+    lcd.print("Your score: ");
+    lcd.print(latestScore);
+    
+    lcd.setCursor(0,2);
+    lcd.print("Top score: ");
+    lcd.print(topScore);
+
+    lcd.setCursor(0,3);
+    lcd.print("Press to stop");
+  }
+}
+
+//-----------LED GRID FUNCTIONS ---------
+// --------------------------------
 // Helper function for Start animation
 // Helper function for Start animation
 void action_CommandExecutor(int command_line) {
@@ -557,6 +607,7 @@ void action_LostAnimation () {
   action_CommandExecutor(command_line);
 }
 
+
 void action_GravityOnPiece() {
   // save previous entity grid
   for (int x = 0; x < VIRTUAL_W; x++) {
@@ -702,6 +753,7 @@ void action_updateScore(int clearedNow){
   if (score>top_score){//update top score
     top_score = score;
   }
+  updateDisplay(score, top_score, in_menu);
 
 }
 
@@ -863,9 +915,7 @@ void PlayGame(){
   unsigned long now = millis();
   static unsigned long lastGravity = 0;
   static unsigned long lastDraw    = 0;
-
-
-  
+ 
   // 1) read inputs as often as possible
   ReadCommands();
 
@@ -881,14 +931,13 @@ void PlayGame(){
     action_RenderFrame();
   }
   in_menu = false;
-  
 }
 
 void Clear_toStart(){
   action_ClearAllGrids();
   action_ClearLockedGrid();
   action_DefineVirtGrid();
-  row_sum[3] = 0;
+  row_sum[1] = 0;
   action_RenderFrame();
 
 }
@@ -897,13 +946,21 @@ void Clear_toStart(){
 
 void setup() {
   Serial.begin(115200);
+  //---------LED SETUP-----------
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
   FastLED.clear(true);
   Clear_toStart();
 
+  //---------LCD SETUP-----------
+  Wire.begin();
+  lcd.init();
+  lcd.backlight();
+  
   in_menu = true;
   btn_pressed = false;
+
+  updateDisplay(0, top_score, in_menu);  // Start in menu
 }
 
 void loop() {
