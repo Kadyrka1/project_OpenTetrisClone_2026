@@ -26,7 +26,6 @@ CRGB leds[NUM_LEDS];
 
 // ---------------- 9 COLORS ----------------
 
-
 const CRGB COLORS[9] = {
 CRGB(255,0,0), //Red
 CRGB(0,255,0), //green
@@ -38,9 +37,6 @@ CRGB(255,128,0),//Orange
 CRGB(255,255,255),//White
 CRGB(0,0,0)//Black (off)
 };
-
-
-
 
 
 
@@ -921,7 +917,7 @@ uint8_t lastState = 0xFF;      // last stable state (bitfield)
 uint8_t lastRead  = 0xFF;      // last raw read
 uint32_t lastChangeTime = 0;
 
-uint8_t readButtons() {
+uint8_t readJoyStick() {
   // pressed = 1, released = 0 (more intuitive)
   uint8_t s = 0;
   if (digitalRead(UP_PIN)    == LOW) s |= (1 << 0);
@@ -971,7 +967,7 @@ void applyJoystickToGame(uint8_t s) {
 
 // Call this frequently (like your loop in joystick test)
 void joystickLoopGame() {
-  uint8_t now = readButtons();
+  uint8_t now = readJoyStick();
 
   // debounce: wait until reading stays the same for debounceMs
   if (now != lastRead) {
@@ -1009,8 +1005,9 @@ int button_pressed() {
     if (reading != lastStableState) {
       lastStableState = reading;
 
-      if (lastStableState == LOW)
+      if (lastStableState == LOW){
         return 1;   // pressed
+      }
       else
         return -1;  // released
     }
@@ -1019,20 +1016,6 @@ int button_pressed() {
   return 0;  // no event
 }
 
-void setup() {
-  Serial.begin(115200);
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-}
-
-void loop() {
-  int state = button_pressed();
-
-  if (state == 1)
-    Serial.println("BUTTON PRESSED");
-
-  if (state == -1)
-    Serial.println("BUTTON RELEASED");
-}
 
 
 void PlayGame(){
@@ -1071,11 +1054,15 @@ void Clear_toStart(){
 
 void setup() {
   Serial.begin(115200);
-
+//-----------JOY STICK-------
   pinMode(UP_PIN,    INPUT_PULLUP);
   pinMode(DOWN_PIN,  INPUT_PULLUP);
   pinMode(LEFT_PIN,  INPUT_PULLUP);
   pinMode(RIGHT_PIN, INPUT_PULLUP);
+
+  //-----------RESET BUTTON----------
+
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   // keep these EXACT initial values like your working test
   lastState = 0xFF;
@@ -1102,7 +1089,12 @@ void setup() {
 void loop() {
   
   ReadCommands();
+
+  if (button_pressed() ==1){
+    btn_pressed = !btn_pressed;
+  }
   
+
   if (!in_menu && btn_pressed){
     setup();
   }
