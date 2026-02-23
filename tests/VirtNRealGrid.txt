@@ -638,7 +638,7 @@ void action_GravityOnPiece() {
     action_SumRows();
     int cleared_now = action_ClearFilledRowsAndDrop();
     action_updateScore(cleared_now);
-    int NewPiece = random(1, DIFF_PIECES + 1);
+    int NewPiece = action_getPieceSelection();
     action_SpawnPiece(NewPiece - 1, NewPiece, 6, 0, 0);
   } else {
     piece_y++;
@@ -673,7 +673,31 @@ void clearEntity() {
     }
   }
 }
-
+int action_getPieceSelection(){
+  int selected_Piece;
+  if ( sequence_count >= DIFF_PIECES ) {
+    // List empty
+    int i, j, k;
+    for (i = 0; i < DIFF_PIECES; i++) {
+      do {
+        // Choose random part
+        j = random(DIFF_PIECES) % DIFF_PIECES;
+        // Check if already in the sequence
+        for (k = 0; k < i; k++) {
+          if (piece_sequence[k] == j) break;
+        }
+        //When part in sequence, generate new
+      } while (k < i);
+      // Add part
+      piece_sequence[i] = j;
+    }
+    // Counter reset
+    sequence_count = 0;
+  }
+  // selected ID is the following
+  selected_Piece = piece_sequence[sequence_count++] + 1;
+  return selected_Piece;
+}
 void action_SpawnPiece(int color, int id, int x, int y, int rotation) {
   clearEntity();
 
@@ -848,7 +872,7 @@ void ReadCommands() {
       // 2) spawnPiece
       // ----------------------------
       if (line.equalsIgnoreCase("spawnPiece")) {
-        int NewPiece = random(1, DIFF_PIECES + 1);
+        int NewPiece = action_getPieceSelection();
 
         action_SpawnPiece(NewPiece - 1, NewPiece , 6, 0, 0);
         Serial.println("Piece spawned");
@@ -1044,7 +1068,7 @@ void Clear_toStart(){
   action_DefineVirtGrid();
   row_sum[0] = 0;
   action_RenderFrame();
-
+  sequence_count = DIFF_PIECES;
 }
 
 // ---------------- SETUP / LOOP ----------------
@@ -1108,8 +1132,8 @@ void loop() {
     action_StartAnimation();
     delay(2000);
     Clear_toStart();
-    int NewPiece = random(1, DIFF_PIECES + 1);
-    action_SpawnPiece(NewPiece - 1, NewPiece, 6, 0, 0);
+    int NewPiece = action_getPieceSelection();
+    action_SpawnPiece(NewPiece - 1, NewPiece, 6, 0, 0); //(int color, int id, int x, int y, int rotation)
     Serial.println("In menu -> In game");
     in_menu = false;
     updateDisplay(score, top_score, in_menu);
