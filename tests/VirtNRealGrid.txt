@@ -1016,29 +1016,18 @@ int button_pressed() {
 
 
 void PlayGame(){
-
   unsigned long now = millis();
   static unsigned long lastGravity = 0;
   static unsigned long lastDraw    = 0;
- 
-  // 1) read inputs as often as possible
+
   ReadCommands();
   joystickLoopGame();
-  int status_btn = button_pressed();
-  if (status_btn){
-    btn_pressed = !btn_pressed;
-    Serial.print("Button status pressed- Status now is:  ");
-    Serial.println(btn_pressed);
-  }
 
-  // 2) gravity tick every 1000ms
   if (now - lastGravity >= 1000) {
     lastGravity = now;
     action_GravityOnPiece();
   }
-
-  // 3) redraw often (smooth response)
-  if (now - lastDraw >= 20) {     // 50 FPS-ish
+  if (now - lastDraw >= 20) {
     lastDraw = now;
     action_RenderFrame();
   }
@@ -1058,7 +1047,7 @@ void Clear_toStart(){
 
 void setup() {
   Serial.begin(115200);
-//-----------JOY STICK-------
+  //-----------JOY STICK-------
   pinMode(UP_PIN,    INPUT_PULLUP);
   pinMode(DOWN_PIN,  INPUT_PULLUP);
   pinMode(LEFT_PIN,  INPUT_PULLUP);
@@ -1091,38 +1080,47 @@ void setup() {
 }
 
 void loop() {
-  
-  ReadCommands();
 
-  int status_btn = button_pressed();
-  if (status_btn){
+  // Button is checked EVERY loop iteration — no blocking while loops
+  if (button_pressed() == 1) {
     btn_pressed = !btn_pressed;
-    Serial.print("Button status pressed- Status now is:  ");
+    Serial.print("Button pressed - btn_pressed now: ");
     Serial.println(btn_pressed);
   }
-  
 
-  if (!in_menu && btn_pressed){
+  ReadCommands();
+
+  // --- IN GAME: button pressed -> reset to menu ---
+  if (!in_menu && btn_pressed) {
+    Serial.println("In game -> reset to menu");
+    btn_pressed = false;
     setup();
+    return; // restart loop() cleanly after setup
   }
-  if (in_menu && btn_pressed){
+
+  // --- IN MENU: button pressed -> start game ---
+  if (in_menu && btn_pressed) {
     btn_pressed = false;
     action_StartAnimation();
     delay(2000);
     Clear_toStart();
     int NewPiece = random(1, DIFF_PIECES + 1);
-    action_SpawnPiece(NewPiece - 1, NewPiece, 6, 0, 0);//colour piece_id, x, y, rotation
-    Serial.println("In menu->In game");
-    PlayGame();
- 
+    action_SpawnPiece(NewPiece - 1, NewPiece, 6, 0, 0);
+    Serial.println("In menu -> In game");
+    in_menu = false;
+    return; // restart loop() so game ticks begin immediately
   }
-  while (!in_menu && !btn_pressed && !if_GameEnd()){
+
+  // --- IN GAME: running ---
+  if (!in_menu && !btn_pressed && !if_GameEnd()) {
     PlayGame();
+    return;
   }
-  if (!in_menu && !btn_pressed && if_GameEnd()){
+
+  // --- IN GAME: game over ---
+  if (!in_menu && !btn_pressed && if_GameEnd()) {
     Serial.println("Game over");
     delay(2000);
-
     Clear_toStart();
     action_LostAnimation();
     delay(4000);
