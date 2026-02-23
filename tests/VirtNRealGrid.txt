@@ -7,6 +7,7 @@
 #include <utility> //necessary for use of pairs
 #include <FastLED.h>
 #include <ctype.h>
+
 //-----------------------------------------------------------------------------------------------
 //----------------PINOUTS----------------
 //-----------------------------------------------------------------------------------------------
@@ -31,13 +32,13 @@ int counter = 0;
 #define NUM_LEDS      100
 #define BRIGHTNESS    80
 #define LED_TYPE      WS2812B
-#define COLOR_ORDER   GRB
+#define COLOUR_ORDER   GRB
 
 CRGB leds[NUM_LEDS];
 
-// ---------------- 9 COLORS ----------------
+// ---------------- 9 COLOURS ----------------
 
-const CRGB COLORS[9] = {
+const CRGB COLOURS[9] = {
 CRGB(255,0,0), //Red
 CRGB(0,255,0), //green
 CRGB(0,0,255), //Blue
@@ -83,7 +84,7 @@ static const int H = 10;
 static const int CROP = 3;
 
 //virtual grid and others with colour and status  
-using Cell = std::pair<uint8_t, uint8_t>; // {colorIndex, status}
+using Cell = std::pair<uint8_t, uint8_t>; // {colourIndex, status}
 
 Cell grid_locked[VIRTUAL_W][VIRTUAL_H];
 Cell grid_entity[VIRTUAL_W][VIRTUAL_H];
@@ -364,7 +365,7 @@ void action_AddPieceToGrid() {
         int ny = piece_y + y;
         
         if (nx >= 0 && nx < VIRTUAL_W && ny >= 0 && ny < VIRTUAL_H) {
-          // Set the color and status
+          // Set the colour and status
           grid_entity[nx][ny] = Cell{(uint8_t)piece_colour, 1};
         }
       }
@@ -376,7 +377,7 @@ void action_LockPiece() {
   for (int x = 0; x < VIRTUAL_W; x++) {
     for (int y = 0; y < VIRTUAL_H; y++) {
       if (grid_entity[x][y].second != 0) {
-        grid_locked[x][y] = grid_entity[x][y];   // copy color
+        grid_locked[x][y] = grid_entity[x][y];   // copy colour
         grid_locked[x][y].second = 3;            // locked
         grid_entity[x][y] = Cell{8, 0};        // clear entity cell
       }
@@ -698,10 +699,10 @@ int action_getPieceSelection(){
   selected_Piece = piece_sequence[sequence_count++] + 1;
   return selected_Piece;
 }
-void action_SpawnPiece(int color, int id, int x, int y, int rotation) {
+void action_SpawnPiece(int colour, int id, int x, int y, int rotation) {
   clearEntity();
 
-  piece_colour = color;
+  piece_colour = colour;
   piece_id = id;
 
   piece_x = x;
@@ -716,7 +717,7 @@ void action_SpawnPiece(int color, int id, int x, int y, int rotation) {
   Serial.print(piece_x);
   Serial.print(",");
   Serial.print(piece_y);
-  Serial.print(") color: ");
+  Serial.print(") colour: ");
   Serial.println(piece_colour);   // <-- you were missing println
 }
 
@@ -816,12 +817,12 @@ void action_RenderFrame() {
 
       // Draw grid layer if active
       if (grid_locked[vx][vy].second != 0) {
-        leds[idx] = COLORS[(int)grid_locked[vx][vy].first];
+        leds[idx] = COLOURS[(int)grid_locked[vx][vy].first];
       }
 
       // Draw entity layer if active (overwrites if overlapping)
       if (grid_entity[vx][vy].second != 0) {
-        leds[idx] = COLORS[(int)grid_entity[vx][vy].first];
+        leds[idx] = COLOURS[(int)grid_entity[vx][vy].first];
       }
     }
   }
@@ -836,7 +837,7 @@ void drawPixel(int x, int y, int colour) {
   int idx = xyToIndex(x, y);
   if (idx < 0) return;
 
-  leds[idx] = COLORS[colour];
+  leds[idx] = COLOURS[colour];
   FastLED.show();
 }
 
@@ -1090,7 +1091,7 @@ void setup() {
   lastChangeTime = 0;
 
   //---------LED SETUP-----------
-  FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+  FastLED.addLeds<LED_TYPE, LED_PIN, COLOUR_ORDER>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
   FastLED.clear(true);
   Clear_toStart();
@@ -1133,7 +1134,7 @@ void loop() {
     delay(2000);
     Clear_toStart();
     int NewPiece = action_getPieceSelection();
-    action_SpawnPiece(NewPiece - 1, NewPiece, 6, 0, 0); //(int color, int id, int x, int y, int rotation)
+    action_SpawnPiece(NewPiece - 1, NewPiece, 6, 0, 0); //(int colour, int id, int x, int y, int rotation)
     Serial.println("In menu -> In game");
     in_menu = false;
     updateDisplay(score, top_score, in_menu);
