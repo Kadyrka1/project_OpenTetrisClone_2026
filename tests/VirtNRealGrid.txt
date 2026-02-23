@@ -7,7 +7,18 @@
 #include <utility> //necessary for use of pairs
 #include <FastLED.h>
 #include <ctype.h>
+//-----------------------------------------------------------------------------------------------
+//----------------PINOUTS----------------
+//-----------------------------------------------------------------------------------------------
 
+// ---------------- JOYSTICK----------------
+const int UP_PIN    = 27; //orange
+const int DOWN_PIN  = 14; //yellow
+const int LEFT_PIN  = 16; //blue
+const int RIGHT_PIN = 17;//green
+
+// ---------------- BUTTON ----------------
+const int BUTTON_PIN = 26;
 
 // ---------------- LCD CONFIG ----------------
 LiquidCrystal_I2C lcd(0x27, 20, 4);   // If blank, try 0x3F
@@ -52,6 +63,10 @@ int piece_rotation;
 int piece_x;
 int piece_y;
 int piece_colour = 0;
+
+//Sequence of parts to avoid duplication or non-occurrence of a stone
+byte piece_sequence[DIFF_PIECES];
+byte sequence_count = DIFF_PIECES;
 
 // =====================================================
 //             VIRTUAL + REAL MATRIX DIMENSIONS
@@ -902,12 +917,8 @@ void ReadCommands() {
 // ----------------------- Play Game -------------------
 
 // ---------------- JOYSTICK  ----------------
-const int UP_PIN    = 27; 
-const int DOWN_PIN  = 14; //check
-const int LEFT_PIN  = 16; //check
-const int RIGHT_PIN = 17;
 
-const uint32_t debounceMs = 30;
+const uint32_t debounceJoystick = 30;
 
 uint8_t lastState = 0xFF;      // last stable state (bitfield)
 uint8_t lastRead  = 0xFF;      // last raw read
@@ -923,7 +934,6 @@ uint8_t readJoyStick() {
   return s;
 }
 
-// THIS replaces printState(): maps stable state -> game actions
 void applyJoystickToGame(uint8_t s) {
   // If you want "NONE" debug, uncomment:
   // if (s == 0) { Serial.println("NONE"); return; }
@@ -961,29 +971,24 @@ void applyJoystickToGame(uint8_t s) {
   Serial.print("JOY state: "); Serial.println(lastState, BIN);
 }
 
-// Call this frequently (like your loop in joystick test)
 void joystickLoopGame() {
   uint8_t now = readJoyStick();
 
-  // debounce: wait until reading stays the same for debounceMs
   if (now != lastRead) {
     lastRead = now;
     lastChangeTime = millis();
   }
 
-  if ((millis() - lastChangeTime) >= debounceMs && now != lastState) {
+  if ((millis() - lastChangeTime) >= debounceJoystick && now != lastState) {
     lastState = now;
 
-    // Your test did: printState(lastState);
-    // Now we do:
     applyJoystickToGame(lastState);
   }
 }
 
 // ---------------- BUTTON ----------------
 
-const int BUTTON_PIN = 26;
-const unsigned long debounceDelay = 100;
+const unsigned long debounceBTN = 100;
 
 int button_pressed() {
   static bool lastStableState = HIGH;
@@ -997,7 +1002,7 @@ int button_pressed() {
     lastReading = reading;
   }
 
-  if ((millis() - lastDebounceTime) > debounceDelay) {
+  if ((millis() - lastDebounceTime) > debounceBTN) {
     if (reading != lastStableState) {
       lastStableState = reading;
 
@@ -1012,7 +1017,6 @@ int button_pressed() {
 
   return 0;  // no event
 }
-
 
 
 void PlayGame(){
@@ -1057,7 +1061,6 @@ void setup() {
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 
-  // keep these EXACT initial values like your working test
   lastState = 0xFF;
   lastRead  = 0xFF;
   lastChangeTime = 0;
