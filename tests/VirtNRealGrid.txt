@@ -1103,8 +1103,9 @@ void setup() {
   
   in_menu = true;
   btn_pressed = false;
+  score = 0;
 
-  updateDisplay(0, top_score, in_menu);  // Start in menu
+  updateDisplay(score, top_score, in_menu);  // Start in menu
 }
 
 void loop() {
