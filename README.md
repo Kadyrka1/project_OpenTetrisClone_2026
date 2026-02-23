@@ -70,13 +70,6 @@ Creapolis, Coburg, Germany
 
 ---
 
-## 📜 License
-
-This project is licensed under the MIT License.
-See the `LICENSE` file for details.
-
----
-
 ## ⚠ Disclaimer
 
 This project is an independent educational recreation of the Tetris game concept.
